@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EnlightDenBackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240831213600_MindMapTables")]
+    partial class MindMapTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -122,38 +125,6 @@ namespace EnlightDenBackendAPI.Migrations
                     b.ToTable("Notes", "General");
                 });
 
-            modelBuilder.Entity("EnlightDenBackendAPI.Entities.Question", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Answer")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ClassId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("QuestionType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Request")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("StudyToolId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClassId");
-
-                    b.HasIndex("StudyToolId");
-
-                    b.ToTable("Questions", "General");
-                });
-
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyPlan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -188,39 +159,6 @@ namespace EnlightDenBackendAPI.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("StudyPlans", "General");
-                });
-
-            modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyTool", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ClassId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ContentType")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("MindMapTopicId")
-                        .HasColumnType("uuid");
-
-                    b.Property<List<Guid>>("QuestionIds")
-                        .IsRequired()
-                        .HasColumnType("uuid[]");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClassId");
-
-                    b.HasIndex("MindMapTopicId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("StudyTools", "General");
                 });
 
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.User", b =>
@@ -305,21 +243,6 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("EnlightDenBackendAPI.Entities.Question", b =>
-                {
-                    b.HasOne("EnlightDenBackendAPI.Entities.Class", "Class")
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EnlightDenBackendAPI.Entities.StudyTool", null)
-                        .WithMany("Questions")
-                        .HasForeignKey("StudyToolId");
-
-                    b.Navigation("Class");
-                });
-
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyPlan", b =>
                 {
                     b.HasOne("EnlightDenBackendAPI.Entities.User", "User")
@@ -331,41 +254,9 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyTool", b =>
-                {
-                    b.HasOne("EnlightDenBackendAPI.Entities.Class", "Class")
-                        .WithMany()
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EnlightDenBackendAPI.Entities.MindMapTopic", "MindMapTopic")
-                        .WithMany()
-                        .HasForeignKey("MindMapTopicId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EnlightDenBackendAPI.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Class");
-
-                    b.Navigation("MindMapTopic");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.MindMap", b =>
                 {
                     b.Navigation("Topics");
-                });
-
-            modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyTool", b =>
-                {
-                    b.Navigation("Questions");
                 });
 #pragma warning restore 612, 618
         }

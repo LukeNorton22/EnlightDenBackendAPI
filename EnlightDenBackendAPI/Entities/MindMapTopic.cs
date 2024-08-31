@@ -1,10 +1,10 @@
 ﻿namespace EnlightDenBackendAPI.Entities;
 
-public class User
+public class MindMapTopic
 {
     public Guid Id { get; set; }
     public required string Name { get; set; }
-    public string? Email { get; set; }
-    public required string Password { get; set; }
+    public MindMap? MindMap { get; set; }
+    public Guid MindMapId { get; set; }
 
 }
