@@ -1,0 +1,6 @@
+@EnlightDenBackendAPI_HostAddress = http://localhost:5203
+
+GET {{EnlightDenBackendAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
