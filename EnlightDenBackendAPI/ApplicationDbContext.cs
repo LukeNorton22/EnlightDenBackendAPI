@@ -8,8 +8,11 @@ public class ApplicationDbContext : DbContext
     {
     }
 
+    //Add your db sets here, each time a new entity is created
     public DbSet<User> Users { get; set; }
+    public DbSet<Class> Classes { get; set; }
 
+    //Apply the configurations each time they are created. 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -17,6 +20,5 @@ public class ApplicationDbContext : DbContext
         // Apply configurations
         modelBuilder.ApplyConfiguration(new UserConfig());
 
-        // Apply other configurations if you have more...
     }
 }
