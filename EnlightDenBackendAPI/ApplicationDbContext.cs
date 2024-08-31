@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EnlightDenBackendAPI.Entities;
+using Microsoft.EntityFrameworkCore;
 
 public class ApplicationDbContext : DbContext
 {
@@ -7,7 +8,15 @@ public class ApplicationDbContext : DbContext
     {
     }
 
-    // Define your DbSets (tables) here
-    // Example:
-    // public DbSet<YourEntity> YourEntities { get; set; }
+    public DbSet<User> Users { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Apply configurations
+        modelBuilder.ApplyConfiguration(new UserConfig());
+
+        // Apply other configurations if you have more...
+    }
 }
