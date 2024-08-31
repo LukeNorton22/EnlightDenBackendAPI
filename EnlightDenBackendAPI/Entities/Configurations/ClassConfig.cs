@@ -6,12 +6,11 @@ public class ClassConfig : IEntityTypeConfiguration<Class>
 {
     public void Configure(EntityTypeBuilder<Class> builder)
     {
-        builder.ToTable("Class", "public"); // Specify the table name and schema
-        builder.HasKey(c => c.Id); // Define the primary key
+        builder.ToTable("Classes", "General"); 
+        builder.HasKey(c => c.Id); 
 
-        // Configure UserId as a foreign key
         builder.HasOne(c => c.User)
-            .WithMany() // Adjust this if a user can have multiple classes
+            .WithMany() 
             .HasForeignKey(c => c.UserId)
             .OnDelete(DeleteBehavior.Cascade); 
 

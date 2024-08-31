@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EnlightDenBackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240831204516_NotesTable")]
+    partial class NotesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -41,7 +44,7 @@ namespace EnlightDenBackendAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Classes", "General");
+                    b.ToTable("Class", "General");
                 });
 
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.Note", b =>
@@ -73,42 +76,6 @@ namespace EnlightDenBackendAPI.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Notes", "General");
-                });
-
-            modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyPlan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Day")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<long>("EndTime")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Month")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("StartTime")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("StudyPlans", "General");
                 });
 
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.User", b =>
@@ -159,17 +126,6 @@ namespace EnlightDenBackendAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Class");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyPlan", b =>
-                {
-                    b.HasOne("EnlightDenBackendAPI.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });
