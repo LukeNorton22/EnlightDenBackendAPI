@@ -15,6 +15,5 @@ public class MindMapTopicConfig : IEntityTypeConfiguration<MindMapTopic>
             .IsRequired()
             .HasMaxLength(100); 
 
-   
     }
 }

@@ -16,6 +16,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<StudyPlan> StudyPlans { get; set; }
     public DbSet<MindMap> MindMaps { get; set; }
     public DbSet<MindMapTopic> MindMapTopics { get; set; }
+    public DbSet<Question> Question { get; set; }
+    public DbSet<StudyTool> StudyTool { get; set; }
 
     //Apply the configurations each time they are created. 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,6 +31,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new StudyPlanConfig());
         modelBuilder.ApplyConfiguration(new  MindMapConfig());
         modelBuilder.ApplyConfiguration(new MindMapTopicConfig());
+        modelBuilder.ApplyConfiguration(new QuestionConfig());
+        modelBuilder.ApplyConfiguration(new StudyToolConfig());
 
     }
 }
