@@ -8,6 +8,8 @@ using System.Linq;
 using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Configuration.UserSecrets;
 
 
 namespace EnlightDenBackendAPI.Controllers
@@ -102,6 +104,37 @@ public IActionResult Delete(Guid id)
     
 
     return Ok("Note deleted.");
+
+}
+
+[HttpPut("{id}")]
+public IActionResult Update([FromBody]UpdateNoteDto updateDto, Guid id)
+{
+    var NoteToUpdate = _context.Set<Note>()
+    .FirstOrDefault(note => note.Id == id);
+
+    if (NoteToUpdate == null)
+    { 
+        return BadRequest("Note not found");
+    }
+
+    NoteToUpdate.Title = updateDto.Title;
+    NoteToUpdate.ClassId = updateDto.ClassId;
+
+    _context.SaveChanges();
+
+    var NoteToReturn = new GetNoteDto 
+    {
+        Id = NoteToUpdate.Id,
+        Title = NoteToUpdate.Title,
+        UserId = NoteToUpdate.UserId,
+        ClassId = NoteToUpdate.ClassId,
+        UpdateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+        CreateDate = NoteToUpdate.CreateDate
+
+    };
+
+    return Ok(NoteToReturn);
 
 }
 

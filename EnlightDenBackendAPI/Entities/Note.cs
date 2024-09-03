@@ -30,3 +30,13 @@ public class GetNoteDto {
 
 
 }
+
+public class UpdateNoteDto {
+
+    
+    public  required string Title {get; set;}
+   
+    public long UpdateDate { get; set; }
+    
+    public Guid ClassId { get; set; }
+}
