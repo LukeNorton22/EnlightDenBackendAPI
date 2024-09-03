@@ -48,7 +48,21 @@ public IActionResult GetNotes()
     return Ok(notes);
 }
 
-       
+[HttpGet("{id}")]
+public IActionResult GetNoteById(Guid id)
+{
+    
+    
+    var NoteToGet = _context.Set<Note>()
+    .FirstOrDefault( note => note.Id == id);
+    
+     if (NoteToGet == null)
+        {
+            return BadRequest("Note not found.");
+        }
+
+    return Ok(NoteToGet);
+}
 [HttpPost("create")]
 public async Task<IActionResult> CreateNote([FromBody] CreateNoteDto createNoteDto)
 {
