@@ -109,7 +109,7 @@ namespace EnlightDenBackendAPI.Controllers
                         new { role = "system", content = "You are a helpful assistant that generates mind map topics." },
                         new { role = "user", content = $"Extract the main topics from the following text, only return the topic names from this text, and do not number them: {text}" }
                     },
-                    max_tokens = 100,
+                    max_tokens = 1500,
                     temperature = 0.5
                 })
             };
