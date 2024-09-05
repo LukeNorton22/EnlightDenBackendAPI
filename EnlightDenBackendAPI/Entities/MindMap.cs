@@ -3,7 +3,7 @@
 public class MindMap
 {
     public Guid Id { get; set; }
-    public List<MindMapTopic>? Topics { get; set; }
+    public List<MindMapTopic>? Topics { get; set; } = new List<MindMapTopic>();
     public List<Guid> TopicIds { get; set; } = new List<Guid>();
     public Class? Class { get; set; }
     public Guid ClassId { get; set; }
