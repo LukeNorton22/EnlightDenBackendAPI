@@ -15,7 +15,7 @@ using Microsoft.Extensions.Configuration.UserSecrets;
 namespace EnlightDenBackendAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/Notes")]
     public class NotesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
