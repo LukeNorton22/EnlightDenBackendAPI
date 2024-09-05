@@ -26,7 +26,7 @@ namespace EnlightDenBackendAPI.Controllers
         public MindMapController(IConfiguration configuration, ApplicationDbContext context)
         {
             _httpClient = new HttpClient();
-            _openAiApiKey = configuration["OpenAI:ApiKey"];
+            _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
             _context = context;
         }
 

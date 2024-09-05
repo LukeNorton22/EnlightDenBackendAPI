@@ -14,7 +14,7 @@ using iText.Kernel.Pdf.Canvas.Parser.Listener;
 namespace EnlightDenBackendAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/StudyTool")]
     public class StudyToolsController : ControllerBase
     {
         private readonly HttpClient _httpClient;
@@ -23,7 +23,7 @@ namespace EnlightDenBackendAPI.Controllers
         public StudyToolsController(IConfiguration configuration)
         {
             _httpClient = new HttpClient();
-            _openAiApiKey = configuration["OpenAI:ApiKey"];
+            _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         }
 
         [HttpPost("GenerateFlashcards")]
