@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EnlightDenBackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240907214313_IdentityUserSchema")]
+    partial class IdentityUserSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -118,10 +121,6 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Property<Guid>("ClassId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<List<Guid>>("TopicIds")
                         .IsRequired()
                         .HasColumnType("uuid[]");
@@ -210,7 +209,7 @@ namespace EnlightDenBackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StudyToolId")
+                    b.Property<Guid?>("StudyToolId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -270,12 +269,12 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Property<int>("ContentType")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("MindMapId")
+                    b.Property<Guid>("MindMapTopicId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Name")
+                    b.Property<List<Guid>>("QuestionIds")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("uuid[]");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -284,7 +283,7 @@ namespace EnlightDenBackendAPI.Migrations
 
                     b.HasIndex("ClassId");
 
-                    b.HasIndex("MindMapId");
+                    b.HasIndex("MindMapTopicId");
 
                     b.HasIndex("UserId");
 
@@ -513,15 +512,11 @@ namespace EnlightDenBackendAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EnlightDenBackendAPI.Entities.StudyTool", "StudyTool")
+                    b.HasOne("EnlightDenBackendAPI.Entities.StudyTool", null)
                         .WithMany("Questions")
-                        .HasForeignKey("StudyToolId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("StudyToolId");
 
                     b.Navigation("Class");
-
-                    b.Navigation("StudyTool");
                 });
 
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyPlan", b =>
@@ -543,9 +538,9 @@ namespace EnlightDenBackendAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EnlightDenBackendAPI.Entities.MindMap", "MindMap")
+                    b.HasOne("EnlightDenBackendAPI.Entities.MindMapTopic", "MindMapTopic")
                         .WithMany()
-                        .HasForeignKey("MindMapId")
+                        .HasForeignKey("MindMapTopicId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -557,7 +552,7 @@ namespace EnlightDenBackendAPI.Migrations
 
                     b.Navigation("Class");
 
-                    b.Navigation("MindMap");
+                    b.Navigation("MindMapTopic");
 
                     b.Navigation("User");
                 });

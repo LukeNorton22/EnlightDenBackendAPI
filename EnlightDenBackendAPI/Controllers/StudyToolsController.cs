@@ -12,11 +12,13 @@ using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using EnlightDenBackendAPI.Entities; // Assuming your entities are in this namespace
 using Microsoft.EntityFrameworkCore; // For database access
+using Microsoft.AspNetCore.Authorization;
 
 namespace EnlightDenBackendAPI.Controllers
 {
     [ApiController]
     [Route("api/StudyTool")]
+    [Authorize]
     public class StudyToolsController : ControllerBase
     {
         private readonly HttpClient _httpClient;

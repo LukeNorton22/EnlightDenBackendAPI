@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using EnlightDenBackendAPI.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -18,6 +19,7 @@ namespace EnlightDenBackendAPI.Controllers
 {
     [ApiController]
     [Route("api/MindMap")]
+    [Authorize]
     public class MindMapController : ControllerBase
     {
         private readonly HttpClient _httpClient;

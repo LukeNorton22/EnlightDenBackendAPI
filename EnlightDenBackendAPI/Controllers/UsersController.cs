@@ -1,4 +1,5 @@
 using EnlightDenBackendAPI.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,7 @@ namespace EnlightDenBackendAPI.Controllers {
 
     [ApiController]
     [Route("api/Users")]
-    
+    [Authorize]
     public class UsersController : ControllerBase
     {   
     private readonly ApplicationDbContext _context;
