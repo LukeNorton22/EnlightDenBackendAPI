@@ -1,4 +1,6 @@
-﻿namespace EnlightDenBackendAPI.Entities;
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace EnlightDenBackendAPI.Entities;
 
 public class User
 {
@@ -6,6 +8,11 @@ public class User
     public required string Name { get; set; }
     public string? Email { get; set; }
     public required string Password { get; set; }
+
+}
+
+public class ApplicationUser : IdentityUser
+{
 
 }
 

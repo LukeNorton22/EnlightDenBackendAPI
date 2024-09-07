@@ -10,11 +10,13 @@ using System.Text;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EnlightDenBackendAPI.Controllers
 {
     [ApiController]
     [Route("api/StudyTool")]
+    [Authorize]
     public class StudyToolsController : ControllerBase
     {
         private readonly HttpClient _httpClient;

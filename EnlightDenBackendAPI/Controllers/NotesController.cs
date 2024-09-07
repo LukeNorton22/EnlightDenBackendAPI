@@ -10,12 +10,14 @@ using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Configuration.UserSecrets;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace EnlightDenBackendAPI.Controllers
 {
     [ApiController]
     [Route("api/Notes")]
+    [Authorize]
     public class NotesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
