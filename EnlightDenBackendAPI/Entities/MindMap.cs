@@ -19,7 +19,7 @@ public class GetMindMapDTO
 {
     public Guid Id { get; set; }
     public required string Name { get; set; }
-    public List<MindMapTopicsDTO> Topics { get; set; }
+    public List<MindMapTopicsDTO> Topics { get; set; } = new List<MindMapTopicsDTO>();
 
 }
 
