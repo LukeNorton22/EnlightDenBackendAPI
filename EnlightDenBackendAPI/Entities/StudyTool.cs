@@ -19,7 +19,7 @@ public class StudyTool
 public enum ContentType
 {
     Test = 1,
-    FlashCardSet = 2, 
+    FlashCardSet = 2,
 }
 
 public class GetStudyToolsDTO

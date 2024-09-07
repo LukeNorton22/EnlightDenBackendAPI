@@ -1,19 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
+using EnlightDenBackendAPI.Entities;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
-using System.Net.Http;
-using System.Net.Http.Json;
-using Microsoft.Extensions.Configuration;
-using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
-using EnlightDenBackendAPI.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 
 namespace EnlightDenBackendAPI.Controllers
 {
@@ -34,7 +33,11 @@ namespace EnlightDenBackendAPI.Controllers
         }
 
         [HttpPost("CreateMindMap")]
-        public async Task<IActionResult> UploadPdfAndGenerateMindMap(IFormFile file, Guid classId, Guid userId)
+        public async Task<IActionResult> UploadPdfAndGenerateMindMap(
+            IFormFile file,
+            Guid classId,
+            Guid userId
+        )
         {
             if (file == null || file.Length == 0)
             {
@@ -59,7 +62,7 @@ namespace EnlightDenBackendAPI.Controllers
                 Name = string.Empty,
                 ClassId = classId,
                 UserId = userId,
-                Topics = new List<MindMapTopic>()
+                Topics = new List<MindMapTopic>(),
             };
 
             foreach (var topic in mindMapTopics)
@@ -69,10 +72,10 @@ namespace EnlightDenBackendAPI.Controllers
                     Id = Guid.NewGuid(),
                     Name = topic,
                     MindMap = mindMap,
-                    MindMapId = mindMap.Id
+                    MindMapId = mindMap.Id,
                 };
 
-                mindMap.Topics.Add(mindMapTopic); 
+                mindMap.Topics.Add(mindMapTopic);
                 mindMap.TopicIds.Add(mindMapTopic.Id);
             }
 
@@ -85,16 +88,15 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpGet("GetAllMindMaps")]
         public async Task<ActionResult<List<GetMindMapDTO>>> GetAllMindMaps()
         {
-            var mindMaps = await _context.MindMaps
-                .Include(mm => mm.Topics)
+            var mindMaps = await _context
+                .MindMaps.Include(mm => mm.Topics)
                 .Select(mm => new GetMindMapDTO
                 {
                     Id = mm.Id,
                     Name = mm.Name,
-                    Topics = mm.Topics.Select(t => new MindMapTopicsDTO
-                    {
-                        Topic = t.Name
-                    }).ToList()
+                    Topics = mm
+                        .Topics.Select(t => new MindMapTopicsDTO { Topic = t.Name })
+                        .ToList(),
                 })
                 .ToListAsync();
 
@@ -104,17 +106,16 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpGet("GetMindMapById/{id}")]
         public async Task<ActionResult<GetMindMapDTO>> GetMindMapById(Guid id)
         {
-            var mindMap = await _context.MindMaps
-                .Include(mm => mm.Topics)
+            var mindMap = await _context
+                .MindMaps.Include(mm => mm.Topics)
                 .Where(mm => mm.Id == id)
                 .Select(mm => new GetMindMapDTO
                 {
                     Id = mm.Id,
                     Name = mm.Name,
-                    Topics = mm.Topics.Select(t => new MindMapTopicsDTO
-                    {
-                        Topic = t.Name
-                    }).ToList()
+                    Topics = mm
+                        .Topics.Select(t => new MindMapTopicsDTO { Topic = t.Name })
+                        .ToList(),
                 })
                 .FirstOrDefaultAsync();
 
@@ -129,8 +130,8 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpDelete("DeleteMindMap/{id}")]
         public async Task<IActionResult> DeleteMindMap(Guid id)
         {
-            var mindMap = await _context.MindMaps
-                .Include(mm => mm.Topics)
+            var mindMap = await _context
+                .MindMaps.Include(mm => mm.Topics)
                 .FirstOrDefaultAsync(mm => mm.Id == id);
 
             if (mindMap == null)
@@ -143,6 +144,7 @@ namespace EnlightDenBackendAPI.Controllers
 
             return Ok($"MindMap with ID {id} has been deleted.");
         }
+
         private string ExtractTextFromPdf(Stream pdfStream)
         {
             StringBuilder extractedText = new StringBuilder();
@@ -153,7 +155,10 @@ namespace EnlightDenBackendAPI.Controllers
                 for (int page = 1; page <= pdfDocument.GetNumberOfPages(); page++)
                 {
                     var strategy = new SimpleTextExtractionStrategy();
-                    var pageText = PdfTextExtractor.GetTextFromPage(pdfDocument.GetPage(page), strategy);
+                    var pageText = PdfTextExtractor.GetTextFromPage(
+                        pdfDocument.GetPage(page),
+                        strategy
+                    );
                     extractedText.Append(pageText);
                 }
             }
@@ -163,19 +168,32 @@ namespace EnlightDenBackendAPI.Controllers
 
         private async Task<List<string>> GenerateMindMapTopicsAsync(string text)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
+            var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://api.openai.com/v1/chat/completions"
+            )
             {
-                Content = JsonContent.Create(new
-                {
-                    model = "gpt-3.5-turbo",
-                    messages = new[]
+                Content = JsonContent.Create(
+                    new
                     {
-                        new { role = "system", content = "You are a helpful assistant that generates mind map topics." },
-                        new { role = "user", content = $"Extract the main topics from the following text, only return the topic names from this text, and do not number them: {text}" }
-                    },
-                    max_tokens = 1500,
-                    temperature = 0.5
-                })
+                        model = "gpt-3.5-turbo",
+                        messages = new[]
+                        {
+                            new
+                            {
+                                role = "system",
+                                content = "You are a helpful assistant that generates mind map topics.",
+                            },
+                            new
+                            {
+                                role = "user",
+                                content = $"Extract the main topics from the following text, only return the topic names from this text, and do not number them: {text}",
+                            },
+                        },
+                        max_tokens = 1500,
+                        temperature = 0.5,
+                    }
+                ),
             };
 
             request.Headers.Add("Authorization", $"Bearer {_openAiApiKey}");
@@ -187,14 +205,19 @@ namespace EnlightDenBackendAPI.Controllers
                 var resultContent = await response.Content.ReadAsStringAsync();
                 var jsonResponse = JObject.Parse(resultContent);
                 var choices = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString();
-                var topics = choices?.Split(new[] { '\n', ',' }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
+                var topics = choices
+                    ?.Split(new[] { '\n', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(t => t.Trim())
+                    .ToList();
 
                 return topics ?? new List<string>();
             }
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                throw new HttpRequestException($"OpenAI API error: {response.StatusCode} - {errorContent}");
+                throw new HttpRequestException(
+                    $"OpenAI API error: {response.StatusCode} - {errorContent}"
+                );
             }
         }
     }

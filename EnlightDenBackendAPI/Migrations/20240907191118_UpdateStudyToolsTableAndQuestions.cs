@@ -15,12 +15,14 @@ namespace EnlightDenBackendAPI.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Questions_StudyTools_StudyToolId",
                 schema: "General",
-                table: "Questions");
+                table: "Questions"
+            );
 
             migrationBuilder.DropColumn(
                 name: "QuestionIds",
                 schema: "General",
-                table: "StudyTools");
+                table: "StudyTools"
+            );
 
             migrationBuilder.AlterColumn<Guid>(
                 name: "StudyToolId",
@@ -31,7 +33,8 @@ namespace EnlightDenBackendAPI.Migrations
                 defaultValue: new Guid("00000000-0000-0000-0000-000000000000"),
                 oldClrType: typeof(Guid),
                 oldType: "uuid",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Questions_StudyTools_StudyToolId",
@@ -41,7 +44,8 @@ namespace EnlightDenBackendAPI.Migrations
                 principalSchema: "General",
                 principalTable: "StudyTools",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
         }
 
         /// <inheritdoc />
@@ -50,14 +54,16 @@ namespace EnlightDenBackendAPI.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Questions_StudyTools_StudyToolId",
                 schema: "General",
-                table: "Questions");
+                table: "Questions"
+            );
 
             migrationBuilder.AddColumn<List<Guid>>(
                 name: "QuestionIds",
                 schema: "General",
                 table: "StudyTools",
                 type: "uuid[]",
-                nullable: false);
+                nullable: false
+            );
 
             migrationBuilder.AlterColumn<Guid>(
                 name: "StudyToolId",
@@ -66,7 +72,8 @@ namespace EnlightDenBackendAPI.Migrations
                 type: "uuid",
                 nullable: true,
                 oldClrType: typeof(Guid),
-                oldType: "uuid");
+                oldType: "uuid"
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Questions_StudyTools_StudyToolId",
@@ -75,7 +82,8 @@ namespace EnlightDenBackendAPI.Migrations
                 column: "StudyToolId",
                 principalSchema: "General",
                 principalTable: "StudyTools",
-                principalColumn: "Id");
+                principalColumn: "Id"
+            );
         }
     }
 }

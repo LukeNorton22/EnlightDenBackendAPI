@@ -14,35 +14,37 @@ namespace EnlightDenBackendAPI.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Class_User_UserId",
                 schema: "General",
-                table: "Class");
+                table: "Class"
+            );
 
             migrationBuilder.DropForeignKey(
                 name: "FK_Notes_Class_ClassId",
                 schema: "General",
-                table: "Notes");
+                table: "Notes"
+            );
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Class",
-                schema: "General",
-                table: "Class");
+            migrationBuilder.DropPrimaryKey(name: "PK_Class", schema: "General", table: "Class");
 
             migrationBuilder.RenameTable(
                 name: "Class",
                 schema: "General",
                 newName: "Classes",
-                newSchema: "General");
+                newSchema: "General"
+            );
 
             migrationBuilder.RenameIndex(
                 name: "IX_Class_UserId",
                 schema: "General",
                 table: "Classes",
-                newName: "IX_Classes_UserId");
+                newName: "IX_Classes_UserId"
+            );
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_Classes",
                 schema: "General",
                 table: "Classes",
-                column: "Id");
+                column: "Id"
+            );
 
             migrationBuilder.CreateTable(
                 name: "StudyPlans",
@@ -51,12 +53,16 @@ namespace EnlightDenBackendAPI.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Description = table.Column<string>(
+                        type: "character varying(500)",
+                        maxLength: 500,
+                        nullable: true
+                    ),
                     Day = table.Column<int>(type: "integer", nullable: false),
                     Month = table.Column<int>(type: "integer", nullable: false),
                     StartTime = table.Column<long>(type: "bigint", nullable: false),
                     EndTime = table.Column<long>(type: "bigint", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false)
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -67,14 +73,17 @@ namespace EnlightDenBackendAPI.Migrations
                         principalSchema: "Authorization",
                         principalTable: "User",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_StudyPlans_UserId",
                 schema: "General",
                 table: "StudyPlans",
-                column: "UserId");
+                column: "UserId"
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Classes_User_UserId",
@@ -84,7 +93,8 @@ namespace EnlightDenBackendAPI.Migrations
                 principalSchema: "Authorization",
                 principalTable: "User",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Notes_Classes_ClassId",
@@ -94,7 +104,8 @@ namespace EnlightDenBackendAPI.Migrations
                 principalSchema: "General",
                 principalTable: "Classes",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
         }
 
         /// <inheritdoc />
@@ -103,39 +114,43 @@ namespace EnlightDenBackendAPI.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Classes_User_UserId",
                 schema: "General",
-                table: "Classes");
+                table: "Classes"
+            );
 
             migrationBuilder.DropForeignKey(
                 name: "FK_Notes_Classes_ClassId",
                 schema: "General",
-                table: "Notes");
+                table: "Notes"
+            );
 
-            migrationBuilder.DropTable(
-                name: "StudyPlans",
-                schema: "General");
+            migrationBuilder.DropTable(name: "StudyPlans", schema: "General");
 
             migrationBuilder.DropPrimaryKey(
                 name: "PK_Classes",
                 schema: "General",
-                table: "Classes");
+                table: "Classes"
+            );
 
             migrationBuilder.RenameTable(
                 name: "Classes",
                 schema: "General",
                 newName: "Class",
-                newSchema: "General");
+                newSchema: "General"
+            );
 
             migrationBuilder.RenameIndex(
                 name: "IX_Classes_UserId",
                 schema: "General",
                 table: "Class",
-                newName: "IX_Class_UserId");
+                newName: "IX_Class_UserId"
+            );
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_Class",
                 schema: "General",
                 table: "Class",
-                column: "Id");
+                column: "Id"
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Class_User_UserId",
@@ -145,7 +160,8 @@ namespace EnlightDenBackendAPI.Migrations
                 principalSchema: "Authorization",
                 principalTable: "User",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Notes_Class_ClassId",
@@ -155,7 +171,8 @@ namespace EnlightDenBackendAPI.Migrations
                 principalSchema: "General",
                 principalTable: "Class",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
         }
     }
 }

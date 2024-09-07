@@ -14,29 +14,23 @@ namespace EnlightDenBackendAPI.Entities.Configurations
             builder.HasKey(sp => sp.Id);
 
             // Define properties
-            builder.Property(sp => sp.Name)
-                .IsRequired();
+            builder.Property(sp => sp.Name).IsRequired();
 
-            builder.Property(sp => sp.Description)
-                .HasMaxLength(500); 
+            builder.Property(sp => sp.Description).HasMaxLength(500);
 
-            builder.Property(sp => sp.Day)
-                .IsRequired();
+            builder.Property(sp => sp.Day).IsRequired();
 
-            builder.Property(sp => sp.Month)
-                .IsRequired();
+            builder.Property(sp => sp.Month).IsRequired();
 
-            builder.Property(sp => sp.StartTime)
-                .IsRequired();
+            builder.Property(sp => sp.StartTime).IsRequired();
 
-            builder.Property(sp => sp.EndTime)
-                .IsRequired();
+            builder.Property(sp => sp.EndTime).IsRequired();
 
-            builder.HasOne(sp => sp.User)           
-                .WithMany()                         
-                .HasForeignKey(sp => sp.UserId)     
-                .OnDelete(DeleteBehavior.Cascade);  
-
+            builder
+                .HasOne(sp => sp.User)
+                .WithMany()
+                .HasForeignKey(sp => sp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

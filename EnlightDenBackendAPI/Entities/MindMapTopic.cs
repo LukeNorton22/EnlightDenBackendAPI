@@ -6,5 +6,4 @@ public class MindMapTopic
     public required string Name { get; set; }
     public MindMap? MindMap { get; set; }
     public Guid MindMapId { get; set; }
-
 }
