@@ -10,6 +10,8 @@ using System.Text;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using EnlightDenBackendAPI.Entities; // Assuming your entities are in this namespace
+using Microsoft.EntityFrameworkCore; // For database access
 using Microsoft.AspNetCore.Authorization;
 
 namespace EnlightDenBackendAPI.Controllers
@@ -21,15 +23,17 @@ namespace EnlightDenBackendAPI.Controllers
     {
         private readonly HttpClient _httpClient;
         private readonly string _openAiApiKey;
+        private readonly ApplicationDbContext _context;
 
-        public StudyToolsController(IConfiguration configuration)
+        public StudyToolsController(IConfiguration configuration, ApplicationDbContext context)
         {
             _httpClient = new HttpClient();
             _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            _context = context; 
         }
 
         [HttpPost("GenerateFlashcards")]
-        public async Task<IActionResult> GenerateFlashcardsFromPdf(IFormFile file)
+        public async Task<IActionResult> GenerateFlashcardsFromPdf(IFormFile file, Guid userId, Guid classId, Guid mindMapId, string name)
         {
             if (file == null || file.Length == 0)
             {
@@ -38,23 +42,23 @@ namespace EnlightDenBackendAPI.Controllers
 
             string extractedText;
 
-            // Use a memory stream to handle the file
             using (var stream = new MemoryStream())
             {
                 await file.CopyToAsync(stream);
-                stream.Position = 0; // Reset stream position to the beginning
+                stream.Position = 0;
 
-                // Extract text from the PDF
                 extractedText = ExtractTextFromPdf(stream);
             }
 
             var flashcards = await GenerateFlashcardsAsync(extractedText);
 
+            await SaveStudyToolAndQuestions(flashcards, ContentType.FlashCardSet, userId, classId, mindMapId, name);
+
             return Ok(new { Flashcards = flashcards });
         }
 
         [HttpPost("GenerateTest")]
-        public async Task<IActionResult> GenerateTestFromPdf(IFormFile file)
+        public async Task<IActionResult> GenerateTestFromPdf(IFormFile file, Guid userId, Guid classId, Guid mindMapId, string name)
         {
             if (file == null || file.Length == 0)
             {
@@ -63,33 +67,105 @@ namespace EnlightDenBackendAPI.Controllers
 
             string extractedText;
 
-            // Use a memory stream to handle the file
             using (var stream = new MemoryStream())
             {
                 await file.CopyToAsync(stream);
-                stream.Position = 0; // Reset stream position to the beginning
+                stream.Position = 0;
 
-                // Extract text from the PDF
                 extractedText = ExtractTextFromPdf(stream);
             }
 
             var testQuestions = await GenerateTestQuestionsAsync(extractedText);
 
+            await SaveStudyToolAndQuestions(testQuestions, ContentType.Test, userId, classId, mindMapId, name);
+
             return Ok(new { TestQuestions = testQuestions });
+        }
+
+        [HttpGet("GetAllStudyTools")]
+        public async Task<ActionResult<List<GetStudyToolsDTO>>> GetAllStudyTools()
+        {
+            var result = await _context.StudyTools
+                .Include(_ => _.Questions)
+                .Select(st => new GetStudyToolsDTO
+                {
+                    Id = st.Id,
+                    Name = st.Name,
+                    UserId = st.UserId,
+                    ClassId = st.ClassId,
+                    MindMapId = st.MindMapId,
+                    ContentType = st.ContentType,
+                    Questions = st.Questions.Select(q => new QuestionDTO
+                    {
+                        Id = q.Id,
+                        Request = q.Request,
+                        Answer = q.Answer,
+                        QuestionType = q.QuestionType
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return Ok(result);
+        }
+
+        [HttpGet("GetStudyTool/{id}")]
+        public async Task<ActionResult<GetStudyToolsDTO>> GetStudyToolById(Guid id)
+        {
+            var studyTool = await _context.StudyTools
+                .Include(_ => _.Questions)
+                .Where(st => st.Id == id)
+                .Select(st => new GetStudyToolsDTO
+                {
+                    Id = st.Id,
+                    Name = st.Name,
+                    UserId = st.UserId,
+                    ClassId = st.ClassId,
+                    MindMapId = st.MindMapId,
+                    ContentType = st.ContentType,
+                    Questions = st.Questions.Select(q => new QuestionDTO
+                    {
+                        Id = q.Id,
+                        Request = q.Request,
+                        Answer = q.Answer,
+                        QuestionType = q.QuestionType
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (studyTool == null)
+            {
+                return NotFound($"StudyTool with ID {id} not found.");
+            }
+
+            return Ok(studyTool);
+        }
+
+        [HttpDelete("DeleteStudyTool/{id}")]
+        public async Task<IActionResult> DeleteStudyTool(Guid id)
+        {
+            var studyTool = await _context.StudyTools.FindAsync(id);
+
+            if (studyTool == null)
+            {
+                return NotFound($"StudyTool with ID {id} not found.");
+            }
+
+            _context.StudyTools.Remove(studyTool);
+
+            await _context.SaveChangesAsync();
+
+            return Ok($"StudyTool with ID {id} has been deleted.");
         }
 
         private string ExtractTextFromPdf(Stream pdfStream)
         {
             StringBuilder extractedText = new StringBuilder();
 
-            // Open the PDF document using iText7
             using (var pdfReader = new PdfReader(pdfStream))
             using (var pdfDocument = new PdfDocument(pdfReader))
             {
-                // Loop through all the pages
                 for (int page = 1; page <= pdfDocument.GetNumberOfPages(); page++)
                 {
-                    // Extract text from each page using SimpleTextExtractionStrategy
                     var strategy = new SimpleTextExtractionStrategy();
                     var pageText = PdfTextExtractor.GetTextFromPage(pdfDocument.GetPage(page), strategy);
                     extractedText.Append(pageText);
@@ -111,7 +187,7 @@ namespace EnlightDenBackendAPI.Controllers
                         new { role = "system", content = "You are a helpful assistant that generates educational flashcards." },
                         new { role = "user", content = $"Create a set of at least 10 detailed flashcards based on the following text, label them Q: and A:: {text}" }
                     },
-                    max_tokens = 1500,  // Set max_tokens to 1500 for longer responses
+                    max_tokens = 1500,
                     temperature = 0.7
                 })
             };
@@ -126,7 +202,6 @@ namespace EnlightDenBackendAPI.Controllers
                 var jsonResponse = JObject.Parse(resultContent);
                 var choices = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString();
 
-                // Split by questions and answers and clean up the response
                 var flashcards = SplitContentIntoPairs(choices, "Flashcard");
 
                 return flashcards;
@@ -150,7 +225,7 @@ namespace EnlightDenBackendAPI.Controllers
                         new { role = "system", content = "You are a helpful assistant that generates educational test questions and answers from notes." },
                         new { role = "user", content = $"Create a test consisting of at least 10 short-answer and true/false questions based on the following text, label them Q: and A:: {text}" }
                     },
-                    max_tokens = 1500,  // Set max_tokens to 1500 for longer responses
+                    max_tokens = 1500,
                     temperature = 0.7
                 })
             };
@@ -165,7 +240,6 @@ namespace EnlightDenBackendAPI.Controllers
                 var jsonResponse = JObject.Parse(resultContent);
                 var choices = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString();
 
-                // Split by questions and answers and clean up the response
                 var testQuestions = SplitContentIntoPairs(choices, "Test Question");
 
                 return testQuestions;
@@ -177,6 +251,45 @@ namespace EnlightDenBackendAPI.Controllers
             }
         }
 
+        private async Task SaveStudyToolAndQuestions(List<string> items, ContentType contentType, Guid userId, Guid classId, Guid mindMapId, string name)
+        {
+            var studyTool = new StudyTool
+            {
+                Id = Guid.NewGuid(),
+                Name = name, 
+                UserId = userId,
+                ClassId = classId,
+                MindMapId = mindMapId,  
+                ContentType = contentType,
+            };
+
+            var questions = new List<Question>();
+
+            foreach (var item in items)
+            {
+                var splitItem = item.Split(new[] { "Q:", "A:" }, StringSplitOptions.RemoveEmptyEntries);
+                if (splitItem.Length == 2)
+                {
+                    var question = new Question
+                    {
+                        Id = Guid.NewGuid(),
+                        Request = splitItem[0].Trim(),
+                        Answer = splitItem[1].Trim(),
+                        ClassId = classId,
+                        QuestionType = contentType == ContentType.Test ? QuestionType.ShortAnswer : QuestionType.MultipleChoice,
+                        StudyToolId = studyTool.Id
+                    };
+
+                    questions.Add(question);
+                }
+            }
+
+            await _context.Questions.AddRangeAsync(questions);
+            await _context.StudyTools.AddAsync(studyTool);
+
+            await _context.SaveChangesAsync();
+        }
+
         private List<string> SplitContentIntoPairs(string text, string itemType)
         {
             var items = new List<string>();
@@ -186,7 +299,6 @@ namespace EnlightDenBackendAPI.Controllers
             {
                 if (i + 1 < parts.Length)
                 {
-                    // Ensure each pair is formatted as "Q: ... A: ..."
                     var question = parts[i].Trim();
                     var answer = parts[i + 1].Trim();
                     items.Add($"Q: {question} A: {answer}");

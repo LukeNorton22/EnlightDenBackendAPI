@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using EnlightDenBackendAPI.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace EnlightDenBackendAPI.Controllers
@@ -52,13 +53,13 @@ namespace EnlightDenBackendAPI.Controllers
 
             var mindMapTopics = await GenerateMindMapTopicsAsync(extractedText);
 
-            // Create new MindMap object
             var mindMap = new MindMap
             {
                 Id = Guid.NewGuid(),
+                Name = string.Empty,
                 ClassId = classId,
                 UserId = userId,
-                Topics = new List<MindMapTopic>() 
+                Topics = new List<MindMapTopic>()
             };
 
             foreach (var topic in mindMapTopics)
@@ -71,7 +72,7 @@ namespace EnlightDenBackendAPI.Controllers
                     MindMapId = mindMap.Id
                 };
 
-                mindMap.Topics.Add(mindMapTopic); // Add topic to list
+                mindMap.Topics.Add(mindMapTopic); 
                 mindMap.TopicIds.Add(mindMapTopic.Id);
             }
 
@@ -81,6 +82,67 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok(new { MindMapId = mindMap.Id, MindMapTopics = mindMapTopics });
         }
 
+        [HttpGet("GetAllMindMaps")]
+        public async Task<ActionResult<List<GetMindMapDTO>>> GetAllMindMaps()
+        {
+            var mindMaps = await _context.MindMaps
+                .Include(mm => mm.Topics)
+                .Select(mm => new GetMindMapDTO
+                {
+                    Id = mm.Id,
+                    Name = mm.Name,
+                    Topics = mm.Topics.Select(t => new MindMapTopicsDTO
+                    {
+                        Topic = t.Name
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return Ok(mindMaps);
+        }
+
+        [HttpGet("GetMindMapById/{id}")]
+        public async Task<ActionResult<GetMindMapDTO>> GetMindMapById(Guid id)
+        {
+            var mindMap = await _context.MindMaps
+                .Include(mm => mm.Topics)
+                .Where(mm => mm.Id == id)
+                .Select(mm => new GetMindMapDTO
+                {
+                    Id = mm.Id,
+                    Name = mm.Name,
+                    Topics = mm.Topics.Select(t => new MindMapTopicsDTO
+                    {
+                        Topic = t.Name
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (mindMap == null)
+            {
+                return NotFound($"MindMap with ID {id} not found.");
+            }
+
+            return Ok(mindMap);
+        }
+
+        [HttpDelete("DeleteMindMap/{id}")]
+        public async Task<IActionResult> DeleteMindMap(Guid id)
+        {
+            var mindMap = await _context.MindMaps
+                .Include(mm => mm.Topics)
+                .FirstOrDefaultAsync(mm => mm.Id == id);
+
+            if (mindMap == null)
+            {
+                return NotFound($"MindMap with ID {id} not found.");
+            }
+
+            _context.MindMaps.Remove(mindMap);
+            await _context.SaveChangesAsync();
+
+            return Ok($"MindMap with ID {id} has been deleted.");
+        }
         private string ExtractTextFromPdf(Stream pdfStream)
         {
             StringBuilder extractedText = new StringBuilder();
