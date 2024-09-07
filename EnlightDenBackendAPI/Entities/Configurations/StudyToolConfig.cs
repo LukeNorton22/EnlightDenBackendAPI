@@ -24,10 +24,15 @@ public class StudyToolConfig : IEntityTypeConfiguration<StudyTool>
             .HasForeignKey(st => st.ClassId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(st => st.MindMapTopic)
+        builder.HasOne(st => st.MindMap)
             .WithMany()  
-            .HasForeignKey(st => st.MindMapTopicId)
+            .HasForeignKey(st => st.MindMapId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(st => st.Questions)
+                .WithOne(q => q.StudyTool)  
+                .HasForeignKey(q => q.StudyToolId)  
+                .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(st => st.ContentType)
             .HasConversion<int>() 

@@ -8,6 +8,8 @@ public class Question
     public QuestionType QuestionType { get; set; }
     public Class? Class { get; set; }
     public Guid ClassId { get; set; }
+    public StudyTool? StudyTool { get; set; } 
+    public Guid StudyToolId { get; set; } 
 }
 
 public enum QuestionType
