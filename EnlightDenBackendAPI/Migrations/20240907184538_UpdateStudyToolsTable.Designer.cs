@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EnlightDenBackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240907184538_UpdateStudyToolsTable")]
+    partial class UpdateStudyToolsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -142,7 +145,7 @@ namespace EnlightDenBackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StudyToolId")
+                    b.Property<Guid?>("StudyToolId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -208,6 +211,10 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<List<Guid>>("QuestionIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -313,15 +320,11 @@ namespace EnlightDenBackendAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EnlightDenBackendAPI.Entities.StudyTool", "StudyTool")
+                    b.HasOne("EnlightDenBackendAPI.Entities.StudyTool", null)
                         .WithMany("Questions")
-                        .HasForeignKey("StudyToolId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("StudyToolId");
 
                     b.Navigation("Class");
-
-                    b.Navigation("StudyTool");
                 });
 
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyPlan", b =>
