@@ -16,16 +16,14 @@ namespace EnlightDenBackendAPI.Migrations
                 table: "MindMaps",
                 type: "text",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: ""
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Name",
-                schema: "General",
-                table: "MindMaps");
+            migrationBuilder.DropColumn(name: "Name", schema: "General", table: "MindMaps");
         }
     }
 }

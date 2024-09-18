@@ -7,19 +7,17 @@ namespace EnlightDenBackendAPI.Entities.Configurations
     {
         public void Configure(EntityTypeBuilder<Question> builder)
         {
-            builder.ToTable("Questions", "General"); 
+            builder.ToTable("Questions", "General");
 
             builder.HasKey(q => q.Id);
 
-            builder.Property(q => q.QuestionType)
-                .HasConversion<int>() 
-                .IsRequired(); 
+            builder.Property(q => q.QuestionType).HasConversion<int>().IsRequired();
 
-            builder.HasOne(q => q.Class)
-                .WithMany()  
+            builder
+                .HasOne(q => q.Class)
+                .WithMany()
                 .HasForeignKey(q => q.ClassId)
                 .OnDelete(DeleteBehavior.Cascade);
-
         }
     }
 }
