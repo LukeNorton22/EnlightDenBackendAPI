@@ -11,8 +11,7 @@ namespace EnlightDenBackendAPI.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.EnsureSchema(
-                name: "Authorization");
+            migrationBuilder.EnsureSchema(name: "Authorization");
 
             migrationBuilder.CreateTable(
                 name: "User",
@@ -21,20 +20,19 @@ namespace EnlightDenBackendAPI.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Password = table.Column<string>(type: "text", nullable: false)
+                    Password = table.Column<string>(type: "text", nullable: false),
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_User", x => x.Id);
-                });
+                }
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "User",
-                schema: "Authorization");
+            migrationBuilder.DropTable(name: "User", schema: "Authorization");
         }
     }
 }

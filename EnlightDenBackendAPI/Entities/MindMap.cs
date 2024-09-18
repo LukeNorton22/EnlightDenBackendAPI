@@ -12,7 +12,6 @@ public class MindMap
     public Guid ClassId { get; set; }
     public User? User { get; set; }
     public Guid UserId { get; set; }
-
 }
 
 public class GetMindMapDTO
@@ -20,7 +19,6 @@ public class GetMindMapDTO
     public Guid Id { get; set; }
     public required string Name { get; set; }
     public List<MindMapTopicsDTO> Topics { get; set; } = new List<MindMapTopicsDTO>();
-
 }
 
 public class MindMapTopicsDTO

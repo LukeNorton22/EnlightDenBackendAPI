@@ -1,18 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
+using System.Threading.Tasks;
+using EnlightDenBackendAPI.Entities; // Assuming your entities are in this namespace
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
-using EnlightDenBackendAPI.Entities; // Assuming your entities are in this namespace
-using Microsoft.EntityFrameworkCore; // For database access
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore; // For database access
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 
 namespace EnlightDenBackendAPI.Controllers
 {
@@ -29,11 +29,17 @@ namespace EnlightDenBackendAPI.Controllers
         {
             _httpClient = new HttpClient();
             _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-            _context = context; 
+            _context = context;
         }
 
         [HttpPost("GenerateFlashcards")]
-        public async Task<IActionResult> GenerateFlashcardsFromPdf(IFormFile file, Guid userId, Guid classId, Guid mindMapId, string name)
+        public async Task<IActionResult> GenerateFlashcardsFromPdf(
+            IFormFile file,
+            Guid userId,
+            Guid classId,
+            Guid mindMapId,
+            string name
+        )
         {
             if (file == null || file.Length == 0)
             {
@@ -52,13 +58,26 @@ namespace EnlightDenBackendAPI.Controllers
 
             var flashcards = await GenerateFlashcardsAsync(extractedText);
 
-            await SaveStudyToolAndQuestions(flashcards, ContentType.FlashCardSet, userId, classId, mindMapId, name);
+            await SaveStudyToolAndQuestions(
+                flashcards,
+                ContentType.FlashCardSet,
+                userId,
+                classId,
+                mindMapId,
+                name
+            );
 
             return Ok(new { Flashcards = flashcards });
         }
 
         [HttpPost("GenerateTest")]
-        public async Task<IActionResult> GenerateTestFromPdf(IFormFile file, Guid userId, Guid classId, Guid mindMapId, string name)
+        public async Task<IActionResult> GenerateTestFromPdf(
+            IFormFile file,
+            Guid userId,
+            Guid classId,
+            Guid mindMapId,
+            string name
+        )
         {
             if (file == null || file.Length == 0)
             {
@@ -77,7 +96,14 @@ namespace EnlightDenBackendAPI.Controllers
 
             var testQuestions = await GenerateTestQuestionsAsync(extractedText);
 
-            await SaveStudyToolAndQuestions(testQuestions, ContentType.Test, userId, classId, mindMapId, name);
+            await SaveStudyToolAndQuestions(
+                testQuestions,
+                ContentType.Test,
+                userId,
+                classId,
+                mindMapId,
+                name
+            );
 
             return Ok(new { TestQuestions = testQuestions });
         }
@@ -85,8 +111,8 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpGet("GetAllStudyTools")]
         public async Task<ActionResult<List<GetStudyToolsDTO>>> GetAllStudyTools()
         {
-            var result = await _context.StudyTools
-                .Include(_ => _.Questions)
+            var result = await _context
+                .StudyTools.Include(_ => _.Questions)
                 .Select(st => new GetStudyToolsDTO
                 {
                     Id = st.Id,
@@ -95,13 +121,15 @@ namespace EnlightDenBackendAPI.Controllers
                     ClassId = st.ClassId,
                     MindMapId = st.MindMapId,
                     ContentType = st.ContentType,
-                    Questions = st.Questions.Select(q => new QuestionDTO
-                    {
-                        Id = q.Id,
-                        Request = q.Request,
-                        Answer = q.Answer,
-                        QuestionType = q.QuestionType
-                    }).ToList()
+                    Questions = st
+                        .Questions.Select(q => new QuestionDTO
+                        {
+                            Id = q.Id,
+                            Request = q.Request,
+                            Answer = q.Answer,
+                            QuestionType = q.QuestionType,
+                        })
+                        .ToList(),
                 })
                 .ToListAsync();
 
@@ -111,8 +139,8 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpGet("GetStudyTool/{id}")]
         public async Task<ActionResult<GetStudyToolsDTO>> GetStudyToolById(Guid id)
         {
-            var studyTool = await _context.StudyTools
-                .Include(_ => _.Questions)
+            var studyTool = await _context
+                .StudyTools.Include(_ => _.Questions)
                 .Where(st => st.Id == id)
                 .Select(st => new GetStudyToolsDTO
                 {
@@ -122,13 +150,15 @@ namespace EnlightDenBackendAPI.Controllers
                     ClassId = st.ClassId,
                     MindMapId = st.MindMapId,
                     ContentType = st.ContentType,
-                    Questions = st.Questions.Select(q => new QuestionDTO
-                    {
-                        Id = q.Id,
-                        Request = q.Request,
-                        Answer = q.Answer,
-                        QuestionType = q.QuestionType
-                    }).ToList()
+                    Questions = st
+                        .Questions.Select(q => new QuestionDTO
+                        {
+                            Id = q.Id,
+                            Request = q.Request,
+                            Answer = q.Answer,
+                            QuestionType = q.QuestionType,
+                        })
+                        .ToList(),
                 })
                 .FirstOrDefaultAsync();
 
@@ -167,7 +197,10 @@ namespace EnlightDenBackendAPI.Controllers
                 for (int page = 1; page <= pdfDocument.GetNumberOfPages(); page++)
                 {
                     var strategy = new SimpleTextExtractionStrategy();
-                    var pageText = PdfTextExtractor.GetTextFromPage(pdfDocument.GetPage(page), strategy);
+                    var pageText = PdfTextExtractor.GetTextFromPage(
+                        pdfDocument.GetPage(page),
+                        strategy
+                    );
                     extractedText.Append(pageText);
                 }
             }
@@ -177,19 +210,32 @@ namespace EnlightDenBackendAPI.Controllers
 
         private async Task<List<string>> GenerateFlashcardsAsync(string text)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
+            var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://api.openai.com/v1/chat/completions"
+            )
             {
-                Content = JsonContent.Create(new
-                {
-                    model = "gpt-3.5-turbo",
-                    messages = new[]
+                Content = JsonContent.Create(
+                    new
                     {
-                        new { role = "system", content = "You are a helpful assistant that generates educational flashcards." },
-                        new { role = "user", content = $"Create a set of at least 10 detailed flashcards based on the following text, label them Q: and A:: {text}" }
-                    },
-                    max_tokens = 1500,
-                    temperature = 0.7
-                })
+                        model = "gpt-3.5-turbo",
+                        messages = new[]
+                        {
+                            new
+                            {
+                                role = "system",
+                                content = "You are a helpful assistant that generates educational flashcards.",
+                            },
+                            new
+                            {
+                                role = "user",
+                                content = $"Create a set of at least 10 detailed flashcards based on the following text, label them Q: and A:: {text}",
+                            },
+                        },
+                        max_tokens = 1500,
+                        temperature = 0.7,
+                    }
+                ),
             };
 
             request.Headers.Add("Authorization", $"Bearer {_openAiApiKey}");
@@ -209,25 +255,40 @@ namespace EnlightDenBackendAPI.Controllers
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                throw new HttpRequestException($"OpenAI API error: {response.StatusCode} - {errorContent}");
+                throw new HttpRequestException(
+                    $"OpenAI API error: {response.StatusCode} - {errorContent}"
+                );
             }
         }
 
         private async Task<List<string>> GenerateTestQuestionsAsync(string text)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
+            var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://api.openai.com/v1/chat/completions"
+            )
             {
-                Content = JsonContent.Create(new
-                {
-                    model = "gpt-3.5-turbo",
-                    messages = new[]
+                Content = JsonContent.Create(
+                    new
                     {
-                        new { role = "system", content = "You are a helpful assistant that generates educational test questions and answers from notes." },
-                        new { role = "user", content = $"Create a test consisting of at least 10 short-answer and true/false questions based on the following text, label them Q: and A:: {text}" }
-                    },
-                    max_tokens = 1500,
-                    temperature = 0.7
-                })
+                        model = "gpt-3.5-turbo",
+                        messages = new[]
+                        {
+                            new
+                            {
+                                role = "system",
+                                content = "You are a helpful assistant that generates educational test questions and answers from notes.",
+                            },
+                            new
+                            {
+                                role = "user",
+                                content = $"Create a test consisting of at least 10 short-answer and true/false questions based on the following text, label them Q: and A:: {text}",
+                            },
+                        },
+                        max_tokens = 1500,
+                        temperature = 0.7,
+                    }
+                ),
             };
 
             request.Headers.Add("Authorization", $"Bearer {_openAiApiKey}");
@@ -247,19 +308,28 @@ namespace EnlightDenBackendAPI.Controllers
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                throw new HttpRequestException($"OpenAI API error: {response.StatusCode} - {errorContent}");
+                throw new HttpRequestException(
+                    $"OpenAI API error: {response.StatusCode} - {errorContent}"
+                );
             }
         }
 
-        private async Task SaveStudyToolAndQuestions(List<string> items, ContentType contentType, Guid userId, Guid classId, Guid mindMapId, string name)
+        private async Task SaveStudyToolAndQuestions(
+            List<string> items,
+            ContentType contentType,
+            Guid userId,
+            Guid classId,
+            Guid mindMapId,
+            string name
+        )
         {
             var studyTool = new StudyTool
             {
                 Id = Guid.NewGuid(),
-                Name = name, 
+                Name = name,
                 UserId = userId,
                 ClassId = classId,
-                MindMapId = mindMapId,  
+                MindMapId = mindMapId,
                 ContentType = contentType,
             };
 
@@ -267,7 +337,10 @@ namespace EnlightDenBackendAPI.Controllers
 
             foreach (var item in items)
             {
-                var splitItem = item.Split(new[] { "Q:", "A:" }, StringSplitOptions.RemoveEmptyEntries);
+                var splitItem = item.Split(
+                    new[] { "Q:", "A:" },
+                    StringSplitOptions.RemoveEmptyEntries
+                );
                 if (splitItem.Length == 2)
                 {
                     var question = new Question
@@ -276,8 +349,11 @@ namespace EnlightDenBackendAPI.Controllers
                         Request = splitItem[0].Trim(),
                         Answer = splitItem[1].Trim(),
                         ClassId = classId,
-                        QuestionType = contentType == ContentType.Test ? QuestionType.ShortAnswer : QuestionType.MultipleChoice,
-                        StudyToolId = studyTool.Id
+                        QuestionType =
+                            contentType == ContentType.Test
+                                ? QuestionType.ShortAnswer
+                                : QuestionType.MultipleChoice,
+                        StudyToolId = studyTool.Id,
                     };
 
                     questions.Add(question);

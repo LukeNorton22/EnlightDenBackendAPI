@@ -16,7 +16,8 @@ namespace EnlightDenBackendAPI.Migrations
                 schema: "Authorization",
                 table: "User",
                 type: "text",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.CreateTable(
                 name: "Classes",
@@ -25,7 +26,7 @@ namespace EnlightDenBackendAPI.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false)
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -36,25 +37,24 @@ namespace EnlightDenBackendAPI.Migrations
                         principalSchema: "Authorization",
                         principalTable: "User",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_Classes_UserId",
                 table: "Classes",
-                column: "UserId");
+                column: "UserId"
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Classes");
+            migrationBuilder.DropTable(name: "Classes");
 
-            migrationBuilder.DropColumn(
-                name: "Email",
-                schema: "Authorization",
-                table: "User");
+            migrationBuilder.DropColumn(name: "Email", schema: "Authorization", table: "User");
         }
     }
 }

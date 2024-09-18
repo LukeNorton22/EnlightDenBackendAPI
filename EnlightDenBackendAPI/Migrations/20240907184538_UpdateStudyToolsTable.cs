@@ -13,19 +13,22 @@ namespace EnlightDenBackendAPI.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_StudyTools_MindMapTopics_MindMapTopicId",
                 schema: "General",
-                table: "StudyTools");
+                table: "StudyTools"
+            );
 
             migrationBuilder.RenameColumn(
                 name: "MindMapTopicId",
                 schema: "General",
                 table: "StudyTools",
-                newName: "MindMapId");
+                newName: "MindMapId"
+            );
 
             migrationBuilder.RenameIndex(
                 name: "IX_StudyTools_MindMapTopicId",
                 schema: "General",
                 table: "StudyTools",
-                newName: "IX_StudyTools_MindMapId");
+                newName: "IX_StudyTools_MindMapId"
+            );
 
             migrationBuilder.AddColumn<string>(
                 name: "Name",
@@ -33,7 +36,8 @@ namespace EnlightDenBackendAPI.Migrations
                 table: "StudyTools",
                 type: "text",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: ""
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_StudyTools_MindMaps_MindMapId",
@@ -43,7 +47,8 @@ namespace EnlightDenBackendAPI.Migrations
                 principalSchema: "General",
                 principalTable: "MindMaps",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
         }
 
         /// <inheritdoc />
@@ -52,24 +57,24 @@ namespace EnlightDenBackendAPI.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_StudyTools_MindMaps_MindMapId",
                 schema: "General",
-                table: "StudyTools");
+                table: "StudyTools"
+            );
 
-            migrationBuilder.DropColumn(
-                name: "Name",
-                schema: "General",
-                table: "StudyTools");
+            migrationBuilder.DropColumn(name: "Name", schema: "General", table: "StudyTools");
 
             migrationBuilder.RenameColumn(
                 name: "MindMapId",
                 schema: "General",
                 table: "StudyTools",
-                newName: "MindMapTopicId");
+                newName: "MindMapTopicId"
+            );
 
             migrationBuilder.RenameIndex(
                 name: "IX_StudyTools_MindMapId",
                 schema: "General",
                 table: "StudyTools",
-                newName: "IX_StudyTools_MindMapTopicId");
+                newName: "IX_StudyTools_MindMapTopicId"
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_StudyTools_MindMapTopics_MindMapTopicId",
@@ -79,7 +84,8 @@ namespace EnlightDenBackendAPI.Migrations
                 principalSchema: "General",
                 principalTable: "MindMapTopics",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
         }
     }
 }
