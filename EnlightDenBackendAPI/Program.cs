@@ -35,6 +35,22 @@ if (
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// Add CORS configuration to allow requests from your frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "AllowFrontend",
+        builder =>
+        {
+            builder
+                .WithOrigins("http://localhost:3000") // Adjust to your frontend's URL
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+    );
+});
+
 // Add Swagger with JWT Bearer configuration
 builder.Services.AddSwaggerGen(c =>
 {
@@ -121,6 +137,9 @@ app.UseHttpsRedirection();
 // Use Authentication & Authorization middleware
 app.UseAuthentication(); // Enable Authentication Middleware
 app.UseAuthorization(); // Enable Authorization Middleware
+
+// Enable CORS for frontend
+app.UseCors("AllowFrontend");
 
 app.MapControllers();
 
