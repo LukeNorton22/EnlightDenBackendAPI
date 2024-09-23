@@ -7,17 +7,40 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Load environment variables from .env file
-DotNetEnv.Env.Load();
+string envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+
+// Check if the .env file exists
+if (File.Exists(envFilePath))
+{
+    DotNetEnv.Env.Load();
+}
+else
+{
+    throw new Exception(".env file not found. Please create one with the required environment variables.");
+}
+
+
 
 // Read API key and connection string from environment variables
-string openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-string connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
-string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY");
-string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
-string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+string openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") 
+    ?? throw new InvalidOperationException("OPENAI_API_KEY is not set in the environment variables.");
+
+string connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+    ?? throw new InvalidOperationException("CONNECTION_STRING is not set in the environment variables.");
+
+string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") 
+    ?? throw new InvalidOperationException("JWT_KEY is not set in the environment variables.");
+
+string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
+    ?? throw new InvalidOperationException("JWT_ISSUER is not set in the environment variables.");
+
+string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+    ?? throw new InvalidOperationException("JWT_AUDIENCE is not set in the environment variables.");
+
 
 // Validate that JWT configuration is not missing
 if (

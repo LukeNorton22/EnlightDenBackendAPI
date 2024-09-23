@@ -6,8 +6,8 @@ public class Note
     public required string Title { get; set; }
     public long CreateDate { get; set; }
     public long UpdateDate { get; set; }
-    public User? User { get; set; }
-    public Guid UserId { get; set; }
+    public ApplicationUser? User { get; set; }
+    public required string UserId { get; set; }
     public Class? Class { get; set; }
     public Guid ClassId { get; set; }
 }
@@ -15,7 +15,7 @@ public class Note
 public class CreateNoteDto
 {
     public required string Title { get; set; }
-    public Guid UserId { get; set; }
+    public required string UserId { get; set; }
     public Guid ClassId { get; set; }
 }
 
@@ -25,7 +25,7 @@ public class GetNoteDto
     public required string Title { get; set; }
     public long CreateDate { get; set; }
     public long UpdateDate { get; set; }
-    public Guid UserId { get; set; }
+    public required string UserId { get; set; }
     public Guid ClassId { get; set; }
 }
 

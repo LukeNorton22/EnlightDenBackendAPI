@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using EnlightDenBackendAPI.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -19,9 +20,12 @@ namespace EnlightDenBackendAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public NotesController(ApplicationDbContext context)
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public NotesController(ApplicationDbContext context,UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: api/notes
@@ -60,7 +64,7 @@ namespace EnlightDenBackendAPI.Controllers
         public async Task<IActionResult> CreateNote([FromBody] CreateNoteDto createNoteDto)
         {
             // Ensure the provided UserId and ClassId exist
-            var user = await _context.Users.FindAsync(createNoteDto.UserId);
+            var user = await _userManager.FindByIdAsync(createNoteDto.UserId.ToString());
             var classEntity = await _context.Classes.FindAsync(createNoteDto.ClassId);
 
             if (user == null || classEntity == null)
