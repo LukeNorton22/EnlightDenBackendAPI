@@ -127,8 +127,9 @@ namespace EnlightDenBackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("uuid[]");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -171,6 +172,10 @@ namespace EnlightDenBackendAPI.Migrations
 
                     b.Property<long>("CreateDate")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -250,8 +255,9 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Property<long>("StartTime")
                         .HasColumnType("bigint");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -279,8 +285,9 @@ namespace EnlightDenBackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -466,7 +473,7 @@ namespace EnlightDenBackendAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EnlightDenBackendAPI.Entities.User", "User")
+                    b.HasOne("EnlightDenBackendAPI.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -528,7 +535,7 @@ namespace EnlightDenBackendAPI.Migrations
 
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyPlan", b =>
                 {
-                    b.HasOne("EnlightDenBackendAPI.Entities.User", "User")
+                    b.HasOne("EnlightDenBackendAPI.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -551,7 +558,7 @@ namespace EnlightDenBackendAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EnlightDenBackendAPI.Entities.User", "User")
+                    b.HasOne("EnlightDenBackendAPI.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

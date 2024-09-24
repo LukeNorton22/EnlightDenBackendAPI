@@ -10,8 +10,8 @@ public class MindMap
     public List<Guid> TopicIds { get; set; } = new List<Guid>();
     public Class? Class { get; set; }
     public Guid ClassId { get; set; }
-    public User? User { get; set; }
-    public Guid UserId { get; set; }
+   public ApplicationUser? User { get; set; }
+    public required string UserId { get; set; }
 }
 
 public class GetMindMapDTO

@@ -41,6 +41,7 @@ namespace EnlightDenBackendAPI.Controllers
                     UpdateDate = note.UpdateDate,
                     UserId = note.UserId,
                     ClassId = note.ClassId,
+                    FilePath = note.FilePath,
                 })
                 .ToList();
 
@@ -61,28 +62,45 @@ namespace EnlightDenBackendAPI.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateNote([FromBody] CreateNoteDto createNoteDto)
+        public async Task<IActionResult> CreateNote([FromForm] CreateNoteDto createNoteDto)
         {
             // Ensure the provided UserId and ClassId exist
-            var user = await _userManager.FindByIdAsync(createNoteDto.UserId.ToString());
+            var user = await _userManager.FindByIdAsync(createNoteDto.UserId);
             var classEntity = await _context.Classes.FindAsync(createNoteDto.ClassId);
-
+            
             if (user == null || classEntity == null)
             {
                 return BadRequest("User or Class not found.");
             }
 
+            // Handle file upload
+            if (createNoteDto.File == null || createNoteDto.File.Length == 0)
+            {
+                return BadRequest("Please upload a valid file.");
+            }
+
+            var Uploads = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            Directory.CreateDirectory(Uploads);
+
+            var fileName = Path.GetFileName(createNoteDto.File.FileName);
+            var filePath = Path.Combine(Uploads, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await createNoteDto.File.CopyToAsync(stream);
+            }
+
             // Create a new Note instance using the DTO
             var note = new Note
             {
-                Title = createNoteDto.Title, // Ensure Title is set
-                CreateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds(), // Convert to Unix timestamp
-                UpdateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds(), // Convert to Unix timestamp
+                Title = createNoteDto.Title,
+                CreateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                UpdateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 UserId = createNoteDto.UserId,
                 ClassId = createNoteDto.ClassId,
+                FilePath = filePath // Store the file path
             };
 
-            // No need to set the Id; it will be automatically generated
             _context.Notes.Add(note);
             await _context.SaveChangesAsync();
 
@@ -94,6 +112,7 @@ namespace EnlightDenBackendAPI.Controllers
                 UpdateDate = note.UpdateDate,
                 UserId = note.UserId,
                 ClassId = note.ClassId,
+                FilePath = note.FilePath, // Return the file path
             };
 
             return CreatedAtAction(nameof(GetNotes), new { id = note.Id }, response);
@@ -116,31 +135,49 @@ namespace EnlightDenBackendAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update([FromBody] UpdateNoteDto updateDto, Guid id)
+        public async Task<IActionResult> Update([FromForm] UpdateNoteDto updateDto, Guid id)
         {
-            var NoteToUpdate = _context.Set<Note>().FirstOrDefault(note => note.Id == id);
+            var noteToUpdate = await _context.Notes.FindAsync(id);
 
-            if (NoteToUpdate == null)
+            if (noteToUpdate == null)
             {
                 return BadRequest("Note not found");
             }
 
-            NoteToUpdate.Title = updateDto.Title;
-            NoteToUpdate.ClassId = updateDto.ClassId;
+            noteToUpdate.Title = updateDto.Title;
+            noteToUpdate.ClassId = updateDto.ClassId;
+            noteToUpdate.UpdateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-            _context.SaveChanges();
-
-            var NoteToReturn = new GetNoteDto
+            // If a new file is provided, save it and update the path
+            if (updateDto.File != null && updateDto.File.Length > 0)
             {
-                Id = NoteToUpdate.Id,
-                Title = NoteToUpdate.Title,
-                UserId = NoteToUpdate.UserId,
-                ClassId = NoteToUpdate.ClassId,
-                UpdateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                CreateDate = NoteToUpdate.CreateDate,
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+                Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = Path.GetFileName(updateDto.File.FileName);
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await updateDto.File.CopyToAsync(stream);
+                }
+
+                noteToUpdate.FilePath = filePath; // Update the file path
+            }
+
+            await _context.SaveChangesAsync();
+
+            var noteToReturn = new GetNoteDto
+            {
+                Id = noteToUpdate.Id,
+                Title = noteToUpdate.Title,
+                UserId = noteToUpdate.UserId,
+                ClassId = noteToUpdate.ClassId,
+                UpdateDate = noteToUpdate.UpdateDate,
+                CreateDate = noteToUpdate.CreateDate,
+                FilePath = noteToUpdate.FilePath, // Return the updated file path
             };
 
-            return Ok(NoteToReturn);
+            return Ok(noteToReturn);
         }
-    }
-}
+            }}

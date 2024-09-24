@@ -10,6 +10,6 @@ public class StudyPlan
     public int Month { get; set; }
     public long StartTime { get; set; }
     public long EndTime { get; set; }
-    public Guid UserId { get; set; }
-    public User? User { get; set; }
+    public required string UserId { get; set; }
+    public ApplicationUser? User { get; set; }
 }
