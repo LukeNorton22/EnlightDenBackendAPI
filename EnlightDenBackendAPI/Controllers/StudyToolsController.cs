@@ -9,6 +9,7 @@ using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore; // For database access
 using Microsoft.Extensions.Configuration;
@@ -23,18 +24,19 @@ namespace EnlightDenBackendAPI.Controllers
         private readonly HttpClient _httpClient;
         private readonly string _openAiApiKey;
         private readonly ApplicationDbContext _context;
-
-        public StudyToolsController(IConfiguration configuration, ApplicationDbContext context)
+        private readonly UserManager<ApplicationUser> _userManager;
+        public StudyToolsController(IConfiguration configuration, ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _httpClient = new HttpClient();
             _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
             _context = context;
+            _userManager = userManager;
         }
 
         [HttpPost("GenerateFlashcards")]
         public async Task<IActionResult> GenerateFlashcardsFromPdf(
             IFormFile file,
-            Guid userId,
+            string userId,
             Guid classId,
             Guid mindMapId,
             string name
@@ -72,7 +74,7 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpPost("GenerateTest")]
         public async Task<IActionResult> GenerateTestFromPdf(
             IFormFile file,
-            Guid userId,
+            string userId,
             Guid classId,
             Guid mindMapId,
             string name
@@ -316,7 +318,7 @@ namespace EnlightDenBackendAPI.Controllers
         private async Task SaveStudyToolAndQuestions(
             List<string> items,
             ContentType contentType,
-            Guid userId,
+            string userId,
             Guid classId,
             Guid mindMapId,
             string name

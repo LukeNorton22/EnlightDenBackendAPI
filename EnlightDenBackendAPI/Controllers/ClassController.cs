@@ -1,16 +1,9 @@
 ﻿using System;
 using System.Linq;
-using EnlightDenBackendAPI.Entities;
-using static ApplicationDbContext;
-using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using EnlightDenBackendAPI.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using Microsoft.Extensions.Configuration.UserSecrets;
-using Microsoft.AspNetCore.Http.HttpResults;
-
 
 namespace EnlightDenBackendAPI.Controllers
 {
@@ -19,54 +12,51 @@ namespace EnlightDenBackendAPI.Controllers
     public class ClassController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        public ClassController(ApplicationDbContext context)
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public ClassController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        [HttpGet] //READ ALL
+        [HttpGet] // READ ALL
         public IActionResult GetAll()
         {
-            var Class = _context.Classes
-                .Select(Classes => new GetClassDto
+            var classes = _context.Classes
+                .Select(c => new GetClassDto
                 {
-                    Id = Classes.Id,
-                    Name = Classes.Name,
-                    Description = Classes.Description,
-                    User = Classes.User,
-                    UserId = Classes.UserId
-
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    UserId = c.UserId
                 }).ToList();
 
-            return Ok(Class);
+            return Ok(classes);
         }
 
         [HttpGet("{id}")]
         public IActionResult GetClassById(Guid id)
         {
-            var ClassToGet = _context.Classes.Find(id);
+            var classToGet = _context.Classes.Find(id);
 
-            if (ClassToGet == null)
+            if (classToGet == null)
             {
                 return NotFound();
             }
 
-            return Ok(ClassToGet);
+            return Ok(classToGet);
         }
-
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateClassDto createDto)
         {
-            var user = await _context.Users.FindAsync(createDto.UserId);
-
+            var user = await _userManager.FindByIdAsync(createDto.UserId.ToString());
 
             if (user == null)
             {
                 return BadRequest("User not found.");
             }
-
-            var existingClass = _context.Classes.FirstOrDefault(c => c.Name == createDto.Name && c.UserId == createDto.UserId);
 
             // Check for duplicate class name
             if (await _context.ClassNameExistsForUserAsync(createDto.Name, createDto.UserId))
@@ -93,51 +83,47 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok(classToReturn);
         }
 
-
-        [HttpPut("Id")]
-        public IActionResult Update([FromBody] UpdateClassDto updateDto, Guid Id)
+        [HttpPut("{id}")]
+        public IActionResult Update([FromBody] UpdateClassDto updateDto, Guid id)
         {
-            var ClassToUpdate = _context.Set<Class>().FirstOrDefault(Class => Class.Id == Id);
+            var classToUpdate = _context.Classes.FirstOrDefault(c => c.Id == id);
 
-            if (ClassToUpdate == null)
+            if (classToUpdate == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            ClassToUpdate.Name = updateDto.Name;
-            ClassToUpdate.Description = updateDto.Description;
+            classToUpdate.Name = updateDto.Name;
+            classToUpdate.Description = updateDto.Description;
 
             _context.SaveChanges();
 
-            var ClassToReturn = new GetClassDto
+            var classToReturn = new GetClassDto
             {
-                Id = ClassToUpdate.Id,
-                Name = ClassToUpdate.Name,
-                Description = ClassToUpdate.Description,
-                User = ClassToUpdate.User,
-                UserId = ClassToUpdate.UserId
+                Id = classToUpdate.Id,
+                Name = classToUpdate.Name,
+                Description = classToUpdate.Description,
+                UserId = classToUpdate.UserId
             };
 
-            return Ok(new { Class = ClassToReturn, Message = "Class updated successfully" });
-
+            return Ok(new { Class = classToReturn, Message = "Class updated successfully" });
         }
 
-        [HttpDelete("Id")]
-        public IActionResult Delete(Guid Id)
+        [HttpDelete("{id}")]
+        public IActionResult Delete(Guid id)
         {
-            var ClassToDelete = _context.Set<Class>().FirstOrDefault(Class => Class.Id == Id);
-            var className = _context.Set<Class>().Where(Class => Class.Id == Id).Select(Class => Class.Name).FirstOrDefault();
-            var response = $"The class named {className} has been deleted";
+            var classToDelete = _context.Classes.FirstOrDefault(c => c.Id == id);
+            var className = _context.Classes.Where(c => c.Id == id).Select(c => c.Name).FirstOrDefault();
 
-            if (ClassToDelete == null)
+            if (classToDelete == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Set<Class>().Remove(ClassToDelete);
+            _context.Classes.Remove(classToDelete);
             _context.SaveChanges();
 
-            return Ok(response);
+            return Ok($"The class named {className} has been deleted");
         }
     }
 }

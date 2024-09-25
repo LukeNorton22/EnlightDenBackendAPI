@@ -34,7 +34,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.ApplyConfiguration(new StudyToolConfig());
     }
 
-    public async Task<bool> ClassNameExistsForUserAsync(string className, Guid userId)
+    public async Task<bool> ClassNameExistsForUserAsync(string className, string userId)
     {
         return await Classes.AnyAsync(c => c.Name == className && c.UserId == userId);
     }
