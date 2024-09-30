@@ -64,11 +64,13 @@ namespace EnlightDenBackendAPI.Controllers
                 return NotFound("Class not found.");
             }
 
+            
             var studyToolEntity = await _context.StudyTools.FindAsync(createDto.StudyToolId);
             if (studyToolEntity == null)
             {
                 return NotFound("StudyTool not found.");
             }
+            
 
             var questionToCreate = new Question
             {
@@ -88,7 +90,7 @@ namespace EnlightDenBackendAPI.Controllers
                 Answer = questionToCreate.Answer,
                 QuestionType = questionToCreate.QuestionType,
                 ClassId = questionToCreate.ClassId,
-                StudyToolId = questionToCreate.StudyToolId,
+                //StudyToolId = questionToCreate.StudyToolId,
             };
 
             return CreatedAtAction(nameof(GetQuestionById), new { id = questionToCreate.Id }, questionToReturn);
@@ -107,8 +109,7 @@ namespace EnlightDenBackendAPI.Controllers
             questionToUpdate.Request = updateDto.Request;
             questionToUpdate.Answer = updateDto.Answer;
             questionToUpdate.QuestionType = updateDto.QuestionType;
-            questionToUpdate.StudyTool = updateDto.StudyTool;
-
+            
             await _context.SaveChangesAsync();
 
             return Ok(new { Class = questionToUpdate, Message = "Question updated successfully" });

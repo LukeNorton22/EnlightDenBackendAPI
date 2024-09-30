@@ -48,6 +48,4 @@ public class UpdateQuestionDto
     public required string Request { get; set; }
     public required string Answer { get; set; }
     public QuestionType QuestionType { get; set; }
-    public StudyTool? StudyTool { get; set; }
- 
 }
