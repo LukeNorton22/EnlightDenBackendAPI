@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using EnlightDenBackendAPI.Entities;
@@ -15,9 +16,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 
-
 namespace EnlightDenBackendAPI.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/MindMap")]
     public class MindMapController : ControllerBase
@@ -26,23 +27,39 @@ namespace EnlightDenBackendAPI.Controllers
         private readonly string _openAiApiKey;
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
-        
-        public MindMapController(IConfiguration configuration, ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+
+        public MindMapController(
+            IConfiguration configuration,
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager
+        )
         {
             _httpClient = new HttpClient();
             _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
             _context = context;
             _userManager = userManager;
-            
         }
 
         [HttpPost("CreateMindMap")]
-        public async Task<IActionResult> UploadPdfAndGenerateMindMap(
-            IFormFile file,
-            Guid classId,
-            string userId
-        )
+        public async Task<IActionResult> UploadPdfAndGenerateMindMap(IFormFile file, Guid classId)
         {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
             if (file == null || file.Length == 0)
             {
                 return BadRequest("Please upload a valid PDF file.");
@@ -65,7 +82,7 @@ namespace EnlightDenBackendAPI.Controllers
                 Id = Guid.NewGuid(),
                 Name = string.Empty,
                 ClassId = classId,
-                UserId = userId,
+                UserId = user.Id,
                 Topics = new List<MindMapTopic>(),
             };
 
@@ -94,7 +111,7 @@ namespace EnlightDenBackendAPI.Controllers
         {
             // Retrieve the note from the database
             var note = await _context.Notes.FindAsync(noteId);
-            
+
             if (note == null)
             {
                 return NotFound("Note not found.");
@@ -106,12 +123,11 @@ namespace EnlightDenBackendAPI.Controllers
                 return NotFound("File not found.");
             }
 
-                string extractedText;
-                using (var stream = new FileStream(note.FilePath, FileMode.Open, FileAccess.Read))
-                {
-                    extractedText = ExtractTextFromPdf(stream); // Implement this method to extract text from PDF
-                }
-           
+            string extractedText;
+            using (var stream = new FileStream(note.FilePath, FileMode.Open, FileAccess.Read))
+            {
+                extractedText = ExtractTextFromPdf(stream); // Implement this method to extract text from PDF
+            }
 
             // Generate mind map topics from the extracted text
             var mindMapTopics = await GenerateMindMapTopicsAsync(extractedText);
@@ -280,7 +296,5 @@ namespace EnlightDenBackendAPI.Controllers
                 );
             }
         }
-
-        
     }
 }

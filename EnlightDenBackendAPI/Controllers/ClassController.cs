@@ -1,20 +1,26 @@
 ﻿using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using EnlightDenBackendAPI.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EnlightDenBackendAPI.Controllers
 {
+    [Authorize]
     [ApiController]
-    [Route("api/controller")]
+    [Route("api/Class")]
     public class ClassController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public ClassController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public ClassController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager
+        )
         {
             _context = context;
             _userManager = userManager;
@@ -23,14 +29,15 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpGet] // READ ALL
         public IActionResult GetAll()
         {
-            var classes = _context.Classes
-                .Select(c => new GetClassDto
+            var classes = _context
+                .Classes.Select(c => new GetClassDto
                 {
                     Id = c.Id,
                     Name = c.Name,
                     Description = c.Description,
-                    UserId = c.UserId
-                }).ToList();
+                    UserId = c.UserId,
+                })
+                .ToList();
 
             return Ok(classes);
         }
@@ -51,24 +58,24 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateClassDto createDto)
         {
-            var user = await _userManager.FindByIdAsync(createDto.UserId.ToString());
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
 
-            if (user == null)
+            if (string.IsNullOrEmpty(userIdClaim))
             {
-                return BadRequest("User not found.");
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
             }
 
-            // Check for duplicate class name
-            if (await _context.ClassNameExistsForUserAsync(createDto.Name, createDto.UserId))
-            {
-                return BadRequest("A class with this name already exists for this user.");
-            }
+            var user = await _userManager.FindByIdAsync(userIdClaim);
 
             var classToCreate = new Class
             {
                 Name = createDto.Name,
                 Description = createDto.Description,
-                UserId = createDto.UserId
+                UserId = user.Id,
             };
             _context.Classes.Add(classToCreate);
             await _context.SaveChangesAsync();
@@ -78,7 +85,7 @@ namespace EnlightDenBackendAPI.Controllers
                 Id = classToCreate.Id,
                 Name = classToCreate.Name,
                 Description = classToCreate.Description,
-                UserId = classToCreate.UserId
+                UserId = classToCreate.UserId,
             };
             return Ok(classToReturn);
         }
@@ -103,7 +110,7 @@ namespace EnlightDenBackendAPI.Controllers
                 Id = classToUpdate.Id,
                 Name = classToUpdate.Name,
                 Description = classToUpdate.Description,
-                UserId = classToUpdate.UserId
+                UserId = classToUpdate.UserId,
             };
 
             return Ok(new { Class = classToReturn, Message = "Class updated successfully" });
@@ -113,7 +120,10 @@ namespace EnlightDenBackendAPI.Controllers
         public IActionResult Delete(Guid id)
         {
             var classToDelete = _context.Classes.FirstOrDefault(c => c.Id == id);
-            var className = _context.Classes.Where(c => c.Id == id).Select(c => c.Name).FirstOrDefault();
+            var className = _context
+                .Classes.Where(c => c.Id == id)
+                .Select(c => c.Name)
+                .FirstOrDefault();
 
             if (classToDelete == null)
             {
