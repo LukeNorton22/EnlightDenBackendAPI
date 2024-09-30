@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using EnlightDenBackendAPI.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +15,7 @@ using static ApplicationDbContext;
 
 namespace EnlightDenBackendAPI.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/Notes")]
     public class NotesController : ControllerBase
@@ -22,7 +24,10 @@ namespace EnlightDenBackendAPI.Controllers
 
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public NotesController(ApplicationDbContext context,UserManager<ApplicationUser> userManager)
+        public NotesController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager
+        )
         {
             _context = context;
             _userManager = userManager;
@@ -65,9 +70,20 @@ namespace EnlightDenBackendAPI.Controllers
         public async Task<IActionResult> CreateNote([FromForm] CreateNoteDto createNoteDto)
         {
             // Ensure the provided UserId and ClassId exist
-            var user = await _userManager.FindByIdAsync(createNoteDto.UserId);
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
             var classEntity = await _context.Classes.FindAsync(createNoteDto.ClassId);
-            
+
             if (user == null || classEntity == null)
             {
                 return BadRequest("User or Class not found.");
@@ -96,9 +112,11 @@ namespace EnlightDenBackendAPI.Controllers
                 Title = createNoteDto.Title,
                 CreateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 UpdateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                UserId = createNoteDto.UserId,
+                UserId = user.Id,
                 ClassId = createNoteDto.ClassId,
-                FilePath = filePath // Store the file path
+                FilePath =
+                    filePath // Store the file path
+                ,
             };
 
             _context.Notes.Add(note);
@@ -180,4 +198,5 @@ namespace EnlightDenBackendAPI.Controllers
 
             return Ok(noteToReturn);
         }
-            }}
+    }
+}

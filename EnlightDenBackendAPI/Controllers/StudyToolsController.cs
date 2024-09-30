@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using EnlightDenBackendAPI.Entities; // Assuming your entities are in this namespace
@@ -17,6 +18,7 @@ using Newtonsoft.Json.Linq;
 
 namespace EnlightDenBackendAPI.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/StudyTool")]
     public class StudyToolsController : ControllerBase
@@ -25,7 +27,12 @@ namespace EnlightDenBackendAPI.Controllers
         private readonly string _openAiApiKey;
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
-        public StudyToolsController(IConfiguration configuration, ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+
+        public StudyToolsController(
+            IConfiguration configuration,
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager
+        )
         {
             _httpClient = new HttpClient();
             _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
@@ -36,12 +43,24 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpPost("GenerateFlashcards")]
         public async Task<IActionResult> GenerateFlashcardsFromPdf(
             IFormFile file,
-            string userId,
             Guid classId,
             Guid mindMapId,
             string name
         )
         {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
             if (file == null || file.Length == 0)
             {
                 return BadRequest("Please upload a valid PDF file.");
@@ -62,7 +81,7 @@ namespace EnlightDenBackendAPI.Controllers
             await SaveStudyToolAndQuestions(
                 flashcards,
                 ContentType.FlashCardSet,
-                userId,
+                user.Id,
                 classId,
                 mindMapId,
                 name
@@ -74,12 +93,24 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpPost("GenerateTest")]
         public async Task<IActionResult> GenerateTestFromPdf(
             IFormFile file,
-            string userId,
             Guid classId,
             Guid mindMapId,
             string name
         )
         {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
             if (file == null || file.Length == 0)
             {
                 return BadRequest("Please upload a valid PDF file.");
@@ -100,7 +131,7 @@ namespace EnlightDenBackendAPI.Controllers
             await SaveStudyToolAndQuestions(
                 testQuestions,
                 ContentType.Test,
-                userId,
+                user.Id,
                 classId,
                 mindMapId,
                 name
