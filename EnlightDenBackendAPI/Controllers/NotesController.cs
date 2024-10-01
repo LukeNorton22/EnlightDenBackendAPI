@@ -2,8 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text;
 using System.Text.RegularExpressions;
 using EnlightDenBackendAPI.Entities;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Identity;
@@ -66,6 +69,33 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok(NoteToGet);
         }
 
+        [HttpGet("GetByClassId/{classId}")]
+        public IActionResult GetNotesForUser(Guid classId)
+        {
+            var note = _context
+                .Notes.Where(_ => _.ClassId == classId)
+                .Select(n => new { n.ClassId })
+                .ToList();
+
+            var notes = _context
+                .Notes.Where(_ => _.ClassId == classId)
+                .Select(note => new GetNoteDto
+                {
+                    Id = note.Id,
+                    Title = note.Title,
+                    CreateDate = note.CreateDate,
+                    UpdateDate = note.UpdateDate,
+                    UserId = note.UserId,
+                    ClassId = note.ClassId,
+                    FilePath = note.FilePath,
+                    Content = note.Content,
+                    HasMindMap = _context.MindMaps.Any(_ => _.ClassId == note.ClassId),
+                })
+                .ToList();
+
+            return Ok(notes);
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreateNote([FromForm] CreateNoteDto createNoteDto)
         {
@@ -95,18 +125,22 @@ namespace EnlightDenBackendAPI.Controllers
                 return BadRequest("Please upload a valid file.");
             }
 
-            var Uploads = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
-            Directory.CreateDirectory(Uploads);
+            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            Directory.CreateDirectory(uploads);
 
             var fileName = Path.GetFileName(createNoteDto.File.FileName);
-            var filePath = Path.Combine(Uploads, fileName);
+            var filePath = Path.Combine(uploads, fileName);
 
+            // Save the file to the server
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await createNoteDto.File.CopyToAsync(stream);
             }
 
-            // Create a new Note instance using the DTO
+            // Extract text from PDF using iText 7
+            string extractedText = ExtractTextFromPdf(filePath);
+
+            // Create a new Note instance using the DTO and extracted text
             var note = new Note
             {
                 Title = createNoteDto.Title,
@@ -114,14 +148,14 @@ namespace EnlightDenBackendAPI.Controllers
                 UpdateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 UserId = user.Id,
                 ClassId = createNoteDto.ClassId,
-                FilePath =
-                    filePath // Store the file path
-                ,
+                FilePath = filePath, // Store the file path
+                Content = extractedText, // Store extracted text from PDF
             };
 
             _context.Notes.Add(note);
             await _context.SaveChangesAsync();
 
+            // Prepare response
             var response = new GetNoteDto
             {
                 Id = note.Id,
@@ -130,10 +164,31 @@ namespace EnlightDenBackendAPI.Controllers
                 UpdateDate = note.UpdateDate,
                 UserId = note.UserId,
                 ClassId = note.ClassId,
-                FilePath = note.FilePath, // Return the file path
+                FilePath =
+                    note.FilePath // Return the file path
+                ,
             };
 
             return CreatedAtAction(nameof(GetNotes), new { id = note.Id }, response);
+        }
+
+        // Method to extract text from PDF using iText 7
+        private string ExtractTextFromPdf(string filePath)
+        {
+            StringBuilder textBuilder = new StringBuilder();
+
+            using (PdfReader pdfReader = new PdfReader(filePath))
+            using (PdfDocument pdfDocument = new PdfDocument(pdfReader))
+            {
+                for (int i = 1; i <= pdfDocument.GetNumberOfPages(); i++)
+                {
+                    var page = pdfDocument.GetPage(i);
+                    var text = PdfTextExtractor.GetTextFromPage(page);
+                    textBuilder.Append(text); // Append extracted text from each page
+                }
+            }
+
+            return textBuilder.ToString();
         }
 
         [HttpDelete("{id}")]

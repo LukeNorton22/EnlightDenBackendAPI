@@ -55,7 +55,44 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok(classToGet);
         }
 
-        [HttpPost]
+        [HttpGet("GetByUserId")]
+        public async Task<IActionResult> GetClassesForUser()
+        {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            // Find the user
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+
+            // Fetch all classes associated with the user
+            var userClasses = _context
+                .Classes.Where(c => c.UserId == user.Id)
+                .Select(c => new GetClassDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    UserId = c.UserId,
+                })
+                .ToList();
+
+            return Ok(userClasses);
+        }
+
+        [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] CreateClassDto createDto)
         {
             var userIdClaim = User

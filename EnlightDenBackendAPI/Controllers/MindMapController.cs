@@ -126,11 +126,11 @@ namespace EnlightDenBackendAPI.Controllers
             string extractedText;
             using (var stream = new FileStream(note.FilePath, FileMode.Open, FileAccess.Read))
             {
-                extractedText = ExtractTextFromPdf(stream); // Implement this method to extract text from PDF
+                extractedText = ExtractTextFromPdf(stream);
             }
 
             // Generate mind map topics from the extracted text
-            var mindMapTopics = await GenerateMindMapTopicsAsync(extractedText);
+            var mindMapTopics = await GenerateMindMapTopicsAsync(note.Content);
 
             var mindMap = new MindMap
             {
@@ -139,6 +139,7 @@ namespace EnlightDenBackendAPI.Controllers
                 ClassId = note.ClassId,
                 UserId = note.UserId,
                 Topics = new List<MindMapTopic>(),
+                NoteId = noteId,
             };
 
             foreach (var topic in mindMapTopics)
@@ -198,6 +199,31 @@ namespace EnlightDenBackendAPI.Controllers
             if (mindMap == null)
             {
                 return NotFound($"MindMap with ID {id} not found.");
+            }
+
+            return Ok(mindMap);
+        }
+
+        [HttpGet("GetMindMapByNoteId/{noteId}")]
+        public async Task<ActionResult<GetMindMapDTO>> GetMindMapByNoteId(Guid noteId)
+        {
+            // Now, find the MindMap that has the same ClassId as the note
+            var mindMap = await _context
+                .MindMaps.Include(mm => mm.Topics) // Include topics for the mind map
+                .Where(mm => mm.NoteId == noteId)
+                .Select(mm => new GetMindMapDTO
+                {
+                    Id = mm.Id,
+                    Name = mm.Name,
+                    Topics = mm
+                        .Topics.Select(t => new MindMapTopicsDTO { Topic = t.Name })
+                        .ToList(),
+                })
+                .FirstOrDefaultAsync();
+
+            if (mindMap == null)
+            {
+                return NotFound($"MindMap not found for note with ID {noteId}.");
             }
 
             return Ok(mindMap);
