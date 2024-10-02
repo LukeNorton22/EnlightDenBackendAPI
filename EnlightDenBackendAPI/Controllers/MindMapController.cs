@@ -289,10 +289,10 @@ namespace EnlightDenBackendAPI.Controllers
                             new
                             {
                                 role = "user",
-                                content = $"Extract the main topics from the following text, only return the topic names from this text, and do not number them: {text}",
+                                content = $"You are a helpful assistant that extracts the main topics from the following text. Please provide a concise list of the main topics, without numbering, bullet points, or any extra formatting. Only the most important topics should be included, ideally fewer than 10 to 15 topics. Please separate the topics with commas, and make sure they are written in title case. Here is the text: {text}",
                             },
                         },
-                        max_tokens = 1500,
+                        max_tokens = 2500,
                         temperature = 0.5,
                     }
                 ),
@@ -309,7 +309,7 @@ namespace EnlightDenBackendAPI.Controllers
                 var choices = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString();
                 var topics = choices
                     ?.Split(new[] { '\n', ',' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(t => t.Trim())
+                    .Select(t => t.Trim().TrimStart('-')) // Trim and remove leading '-'
                     .ToList();
 
                 return topics ?? new List<string>();
