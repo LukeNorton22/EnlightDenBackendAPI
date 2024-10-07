@@ -180,6 +180,28 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok(mindMaps);
         }
 
+        [HttpGet("GetNoteContentFromMindMap/{mindMapId}")]
+        public async Task<ActionResult<string>> GetNoteContentFromMindMap(Guid mindMapId)
+        {
+            // Retrieve the mind map, including its associated note
+            var mindMap = await _context.MindMaps.FirstOrDefaultAsync(mm => mm.Id == mindMapId);
+
+            var noteContent = await _context.Notes.FirstOrDefaultAsync(_ => _.Id == mindMap.NoteId);
+
+            if (mindMap == null)
+            {
+                return NotFound($"MindMap with ID {mindMapId} not found.");
+            }
+
+            // Return the note content
+            if (noteContent == null)
+            {
+                return NotFound($"Note associated with MindMap {mindMapId} not found.");
+            }
+
+            return Ok(noteContent.Content); // Return note content
+        }
+
         [HttpGet("GetMindMapById/{id}")]
         public async Task<ActionResult<GetMindMapDTO>> GetMindMapById(Guid id)
         {
@@ -216,8 +238,10 @@ namespace EnlightDenBackendAPI.Controllers
                     Id = mm.Id,
                     Name = mm.Name,
                     Topics = mm
-                        .Topics.Select(t => new MindMapTopicsDTO { Topic = t.Name })
+                        .Topics.Select(t => new MindMapTopicsDTO { Id = t.Id, Topic = t.Name })
                         .ToList(),
+                    NoteId = mm.NoteId,
+                    ClassId = mm.ClassId,
                 })
                 .FirstOrDefaultAsync();
 

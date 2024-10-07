@@ -219,6 +219,135 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok($"StudyTool with ID {id} has been deleted.");
         }
 
+        [HttpPost("GenerateTestFromTopic")]
+        public async Task<IActionResult> GenerateTestFromTopic(
+            [FromBody] GenerateTestRequest request
+        )
+        {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            var mindMap = await _context.MindMaps.FindAsync(request.MindMapId);
+            // Fetch the note content using the noteId from the request
+            var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == mindMap.NoteId);
+
+            if (note == null)
+            {
+                return NotFound("Note not found.");
+            }
+
+            string noteContent = note.Content;
+
+            if (string.IsNullOrEmpty(request.Name) || string.IsNullOrEmpty(noteContent))
+            {
+                return BadRequest("Name and note content are required.");
+            }
+
+            var topicName = await _context.MindMapTopics.FindAsync(request.TopicId);
+
+            // Generate the test questions based on the note content and the topic
+            var testQuestions = await GenerateTestQuestionsTopicAsync(noteContent, topicName.Name);
+
+            // Save the generated test questions and study tool
+            var generatedTestId = await SaveStudyToolAndQuestionsTopic(
+                testQuestions,
+                ContentType.Test,
+                user.Id,
+                mindMap.ClassId,
+                request.MindMapId,
+                request.Name,
+                request.TopicId
+            );
+
+            // Return the generated test ID (adjust this based on your actual logic)
+            return Ok(new { TestId = generatedTestId });
+        }
+
+        [HttpGet("CheckExistingTest/{topicId}")]
+        public async Task<IActionResult> CheckExistingTest(Guid topicId)
+        {
+            var testExists = await _context.StudyTools.FirstOrDefaultAsync(t =>
+                t.TopicId == topicId
+            );
+
+            var testBool = await _context.StudyTools.AnyAsync(t => t.TopicId == topicId);
+
+            return Ok(new { TestExists = testBool, TestId = testExists?.Id }); // Return as an object with a key
+        }
+
+        private async Task<List<string>> GenerateTestQuestionsTopicAsync(string text, string topic)
+        {
+            var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://api.openai.com/v1/chat/completions"
+            )
+            {
+                Content = JsonContent.Create(
+                    new
+                    {
+                        model = "gpt-4", // Using GPT-4 for more accurate and detailed responses
+                        messages = new[]
+                        {
+                            new
+                            {
+                                role = "system",
+                                content = "You are an expert educational assistant tasked with generating highly accurate test questions based on detailed notes. Your answers must be directly extracted from the given notes.",
+                            },
+                            new
+                            {
+                                role = "user",
+                                content = $@"
+                        You are provided with the following topic: '{topic}'.
+                        Your task is to create a set of **at least 10 detailed test questions**. Each question must be closely related to this topic, and the answer must be **directly and exclusively derived** from the following notes:
+
+                        {text}
+
+                        The questions should be a combination of **short-answer** and **true/false** types. Ensure that all questions are related to the topic '{topic}' and that no irrelevant questions are generated.
+
+                        Format each question and answer like this:
+                        Q: [Your question here]
+                        A: [Your detailed and accurate answer here]",
+                            },
+                        },
+                        max_tokens = 4096,
+                        temperature = 0.3, // Reduced temperature for more factual and precise responses
+                    }
+                ),
+            };
+
+            request.Headers.Add("Authorization", $"Bearer {_openAiApiKey}");
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var resultContent = await response.Content.ReadAsStringAsync();
+                var jsonResponse = JObject.Parse(resultContent);
+                var choices = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString();
+
+                var testQuestions = SplitContentIntoPairs(choices, "Test Question");
+
+                return testQuestions;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(
+                    $"OpenAI API error: {response.StatusCode} - {errorContent}"
+                );
+            }
+        }
+
         private string ExtractTextFromPdf(Stream pdfStream)
         {
             StringBuilder extractedText = new StringBuilder();
@@ -396,6 +525,62 @@ namespace EnlightDenBackendAPI.Controllers
             await _context.StudyTools.AddAsync(studyTool);
 
             await _context.SaveChangesAsync();
+        }
+
+        private async Task<Guid> SaveStudyToolAndQuestionsTopic(
+            List<string> items,
+            ContentType contentType,
+            string userId,
+            Guid classId,
+            Guid mindMapId,
+            string name,
+            Guid topicId
+        )
+        {
+            var studyTool = new StudyTool
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                UserId = userId,
+                ClassId = classId,
+                MindMapId = mindMapId,
+                ContentType = contentType,
+                TopicId = topicId,
+            };
+
+            var questions = new List<Question>();
+
+            foreach (var item in items)
+            {
+                var splitItem = item.Split(
+                    new[] { "Q:", "A:" },
+                    StringSplitOptions.RemoveEmptyEntries
+                );
+                if (splitItem.Length == 2)
+                {
+                    var question = new Question
+                    {
+                        Id = Guid.NewGuid(),
+                        Request = splitItem[0].Trim(),
+                        Answer = splitItem[1].Trim(),
+                        ClassId = classId,
+                        QuestionType =
+                            contentType == ContentType.Test
+                                ? QuestionType.ShortAnswer
+                                : QuestionType.MultipleChoice,
+                        StudyToolId = studyTool.Id,
+                    };
+
+                    questions.Add(question);
+                }
+            }
+
+            await _context.Questions.AddRangeAsync(questions);
+            await _context.StudyTools.AddAsync(studyTool);
+
+            await _context.SaveChangesAsync();
+
+            return studyTool.Id;
         }
 
         private List<string> SplitContentIntoPairs(string text, string itemType)
