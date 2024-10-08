@@ -89,7 +89,7 @@ namespace EnlightDenBackendAPI.Controllers
                     ClassId = note.ClassId,
                     FilePath = note.FilePath,
                     Content = note.Content,
-                    HasMindMap = _context.MindMaps.Any(_ => _.ClassId == note.ClassId),
+                    HasMindMap = _context.MindMaps.Any(_ => _.NoteId == note.Id),
                 })
                 .ToList();
 
