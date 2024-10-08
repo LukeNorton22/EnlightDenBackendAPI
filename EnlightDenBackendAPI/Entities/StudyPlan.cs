@@ -23,6 +23,8 @@ public class  CreateStudyPlanDto
     public int Month { get; set; }
     public long StartTime { get; set; }
     public long EndTime { get; set; }
+    public Guid UserId { get; set; }
+
 
 }
 
