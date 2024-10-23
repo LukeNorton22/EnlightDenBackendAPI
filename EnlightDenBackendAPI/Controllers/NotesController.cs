@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration.UserSecrets;
+using Tesseract;
 using static ApplicationDbContext;
 
 namespace EnlightDenBackendAPI.Controllers
@@ -137,7 +138,7 @@ namespace EnlightDenBackendAPI.Controllers
                 await createNoteDto.File.CopyToAsync(stream);
             }
 
-            // Extract text from PDF using iText 7
+            // Extract text from PDF using iText 7 and Tesseract OCR
             string extractedText = ExtractTextFromPdf(filePath);
 
             // Create a new Note instance using the DTO and extracted text
@@ -164,18 +165,18 @@ namespace EnlightDenBackendAPI.Controllers
                 UpdateDate = note.UpdateDate,
                 UserId = note.UserId,
                 ClassId = note.ClassId,
-                FilePath =
-                    note.FilePath // Return the file path
-                ,
+                FilePath = note.FilePath,
             };
 
             return CreatedAtAction(nameof(GetNotes), new { id = note.Id }, response);
         }
 
-        // Method to extract text from PDF using iText 7
+        // Method to extract text from PDF using iText 7 and Tesseract OCR
+        // Method to extract text from PDF using iText 7 and Tesseract OCR
         private string ExtractTextFromPdf(string filePath)
         {
             StringBuilder textBuilder = new StringBuilder();
+            string tessdataPath = @"./tessdata"; // Assuming tessdata is in the project root
 
             using (PdfReader pdfReader = new PdfReader(filePath))
             using (PdfDocument pdfDocument = new PdfDocument(pdfReader))
@@ -183,8 +184,62 @@ namespace EnlightDenBackendAPI.Controllers
                 for (int i = 1; i <= pdfDocument.GetNumberOfPages(); i++)
                 {
                     var page = pdfDocument.GetPage(i);
+
+                    // Extract embedded text using iText 7
                     var text = PdfTextExtractor.GetTextFromPage(page);
-                    textBuilder.Append(text); // Append extracted text from each page
+
+                    // If embedded text is found, append it
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        textBuilder.AppendLine(text);
+                    }
+                    else
+                    {
+                        // If no embedded text, try to extract images and perform OCR
+                        var resources = page.GetResources();
+                        var xObjectNames = resources.GetResourceNames();
+
+                        foreach (var xObjectName in xObjectNames)
+                        {
+                            try
+                            {
+                                var xObject = resources.GetImage(xObjectName);
+                                if (xObject != null)
+                                {
+                                    using (
+                                        var imageStream = new MemoryStream(
+                                            xObject.GetImageBytes(true)
+                                        )
+                                    )
+                                    {
+                                        using (
+                                            var ocrEngine = new TesseractEngine(
+                                                tessdataPath,
+                                                "eng",
+                                                EngineMode.Default
+                                            )
+                                        )
+                                        {
+                                            var imagePix = Pix.LoadFromMemory(
+                                                imageStream.ToArray()
+                                            );
+                                            using (var pageText = ocrEngine.Process(imagePix))
+                                            {
+                                                textBuilder.AppendLine(pageText.GetText()); // Append OCR result
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log or handle exceptions related to image extraction or OCR
+                                Console.WriteLine(
+                                    $"Error processing image for OCR on page {i}: {ex.Message}"
+                                );
+                            }
+                        }
+                    }
                 }
             }
 
@@ -208,35 +263,26 @@ namespace EnlightDenBackendAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update([FromForm] UpdateNoteDto updateDto, Guid id)
+        public async Task<IActionResult> Update([FromBody] UpdateNoteDto updateDto, Guid id)
         {
-            var noteToUpdate = await _context.Notes.FindAsync(id);
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join(
+                    ", ",
+                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                );
+                return BadRequest($"Model state is invalid: {errors}");
+            }
 
+            var noteToUpdate = await _context.Notes.FindAsync(id);
             if (noteToUpdate == null)
             {
-                return BadRequest("Note not found");
+                return NotFound("Note not found");
             }
 
             noteToUpdate.Title = updateDto.Title;
             noteToUpdate.ClassId = updateDto.ClassId;
             noteToUpdate.UpdateDate = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-            // If a new file is provided, save it and update the path
-            if (updateDto.File != null && updateDto.File.Length > 0)
-            {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
-                Directory.CreateDirectory(uploadsFolder);
-
-                var fileName = Path.GetFileName(updateDto.File.FileName);
-                var filePath = Path.Combine(uploadsFolder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await updateDto.File.CopyToAsync(stream);
-                }
-
-                noteToUpdate.FilePath = filePath; // Update the file path
-            }
 
             await _context.SaveChangesAsync();
 
@@ -248,7 +294,7 @@ namespace EnlightDenBackendAPI.Controllers
                 ClassId = noteToUpdate.ClassId,
                 UpdateDate = noteToUpdate.UpdateDate,
                 CreateDate = noteToUpdate.CreateDate,
-                FilePath = noteToUpdate.FilePath, // Return the updated file path
+                FilePath = noteToUpdate.FilePath,
             };
 
             return Ok(noteToReturn);
