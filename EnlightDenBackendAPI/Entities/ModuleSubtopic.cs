@@ -1,6 +1,6 @@
 ﻿namespace EnlightDenBackendAPI.Entities
 {
-    public class ModuleTopic
+    public class ModuleSubtopic
     {
         public Guid Id { get; set; }
         public required string Name { get; set; }

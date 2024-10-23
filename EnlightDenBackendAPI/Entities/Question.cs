@@ -10,6 +10,8 @@ public class Question
     public Guid ClassId { get; set; }
     public StudyTool? StudyTool { get; set; }
     public Guid StudyToolId { get; set; }
+    public PracticeTest? PracticeTest { get; set; }
+    public Guid PracticeTestId { get; set; }
 }
 
 public enum QuestionType

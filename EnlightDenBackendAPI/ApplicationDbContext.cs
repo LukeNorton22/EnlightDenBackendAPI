@@ -17,6 +17,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<MindMapTopic> MindMapTopics { get; set; }
     public DbSet<Question> Questions { get; set; }
     public DbSet<StudyTool> StudyTools { get; set; }
+    public DbSet<Module> Modules { get; set; }
+    public DbSet<ModuleSubtopic> ModuleSubtopics { get; set; }
+    public DbSet<PracticeTest> PracticeTests { get; set; }
 
     //Apply the configurations each time they are created.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,6 +35,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.ApplyConfiguration(new MindMapTopicConfig());
         modelBuilder.ApplyConfiguration(new QuestionConfig());
         modelBuilder.ApplyConfiguration(new StudyToolConfig());
+        modelBuilder.ApplyConfiguration(new ModuleConfig());
+        modelBuilder.ApplyConfiguration(new ModuleSubtopicConfig());
+        modelBuilder.ApplyConfiguration(new PracticeTestConfig());
     }
 
     public async Task<bool> ClassNameExistsForUserAsync(string className, string userId)
