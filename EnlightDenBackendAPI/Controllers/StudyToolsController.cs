@@ -308,7 +308,7 @@ namespace EnlightDenBackendAPI.Controllers
                                 role = "user",
                                 content = $@"
                         You are provided with the following topic: '{topic}'.
-                        Your task is to create a set of **at least 10 detailed test questions**. Each question must be closely related to this topic, and the answer must be **directly and exclusively derived** from the following notes:
+                        Your task is to create a set of ** detailed test questions**. Each question must be closely related to this topic, and the answer must be **directly and exclusively derived** from the following notes:
 
                         {text}
 
