@@ -302,26 +302,34 @@ namespace EnlightDenBackendAPI.Controllers
                 Content = JsonContent.Create(
                     new
                     {
-                        model = "gpt-3.5-turbo",
+                        model = "gpt-4",
                         messages = new[]
                         {
                             new
                             {
                                 role = "system",
-                                content = "You are a helpful assistant that generates mind map topics.",
+                                content = "You are an assistant focused on extracting only the most essential, broad, and high-level topics from academic and study notes.",
                             },
                             new
                             {
                                 role = "user",
-                                content = $"You are a helpful assistant that extracts the main topics from the following text. Please provide a concise list of the main topics, without numbering, bullet points, or any extra formatting. Only the most important topics should be included, ideally fewer than 10 to 15 topics. Please separate the topics with commas, and make sure they are written in title case. Here is the text: {text}",
+                                content = $@"
+The goal is to extract only the central, overarching topics from the following text. 
+Avoid picking up any subtopics, minor ideas, or details. Focus solely on the biggest themes or concepts. 
+Each topic should represent a broad idea or main category that encompasses other subtopics.
+
+Do not provide numbered or bulleted lists—only return the topics as a comma-separated string. 
+Make sure topics are concise, written in title case, and truly significant. This is text extracted from a PDF. Keep the topics broad and overarching Here is the text: {text}",
                             },
                         },
-                        max_tokens = 2500,
-                        temperature = 0.5,
+                        max_tokens = 2000, // Adjusted to balance coverage and focus
+                        temperature = 0.2 // Lowered for highly deterministic results
+                        ,
                     }
                 ),
             };
 
+            // Add OpenAI API authorization key
             request.Headers.Add("Authorization", $"Bearer {_openAiApiKey}");
 
             var response = await _httpClient.SendAsync(request);
@@ -331,9 +339,12 @@ namespace EnlightDenBackendAPI.Controllers
                 var resultContent = await response.Content.ReadAsStringAsync();
                 var jsonResponse = JObject.Parse(resultContent);
                 var choices = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString();
+
+                // Ensure topics are split correctly and irrelevant content is filtered out
                 var topics = choices
                     ?.Split(new[] { '\n', ',' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(t => t.Trim().TrimStart('-')) // Trim and remove leading '-'
+                    .Select(t => t.Trim().TrimStart('-')) // Trim spaces and dashes
+                    .Where(t => !string.IsNullOrWhiteSpace(t) && t.Length > 3) // Filter small or empty topics
                     .ToList();
 
                 return topics ?? new List<string>();

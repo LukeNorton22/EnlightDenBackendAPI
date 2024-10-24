@@ -277,12 +277,28 @@ namespace EnlightDenBackendAPI.Controllers
         public async Task<IActionResult> CheckExistingTest(Guid topicId)
         {
             var testExists = await _context.StudyTools.FirstOrDefaultAsync(t =>
-                t.TopicId == topicId
+                t.TopicId == topicId && t.ContentType == ContentType.Test
             );
 
-            var testBool = await _context.StudyTools.AnyAsync(t => t.TopicId == topicId);
+            var testBool = await _context.StudyTools.AnyAsync(t =>
+                t.TopicId == topicId && t.ContentType == ContentType.Test
+            );
 
             return Ok(new { TestExists = testBool, TestId = testExists?.Id }); // Return as an object with a key
+        }
+
+        [HttpGet("CheckExistingFlashcard/{topicId}")]
+        public async Task<IActionResult> CheckExistingFlashCard(Guid topicId)
+        {
+            var testExists = await _context.StudyTools.FirstOrDefaultAsync(t =>
+                t.TopicId == topicId && t.ContentType == ContentType.FlashCardSet
+            );
+
+            var testBool = await _context.StudyTools.AnyAsync(t =>
+                t.TopicId == topicId && t.ContentType == ContentType.FlashCardSet
+            );
+
+            return Ok(new { FlashCardExists = testBool, FlashCardId = testExists?.Id }); // Return as an object with a key
         }
 
         private async Task<List<string>> GenerateTestQuestionsTopicAsync(string text, string topic)
@@ -295,32 +311,45 @@ namespace EnlightDenBackendAPI.Controllers
                 Content = JsonContent.Create(
                     new
                     {
-                        model = "gpt-4", // Using GPT-4 for more accurate and detailed responses
+                        model = "gpt-4", // Using GPT-4 for accuracy and detail
                         messages = new[]
                         {
                             new
                             {
                                 role = "system",
-                                content = "You are an expert educational assistant tasked with generating highly accurate test questions based on detailed notes. Your answers must be directly extracted from the given notes.",
+                                content = @"
+You are an expert educational assistant tasked with generating highly specific test questions.
+Your job is to create test questions that are closely tied to the provided topic. 
+The output must strictly follow the given format, and irrelevant or off-topic content should be excluded entirely.",
                             },
                             new
                             {
                                 role = "user",
                                 content = $@"
-                        You are provided with the following topic: '{topic}'.
-                        Your task is to create a set of ** detailed test questions**. Each question must be closely related to this topic, and the answer must be **directly and exclusively derived** from the following notes:
+The topic for these test questions is: **'{topic}'**.
+Use the most relevant content from the following notes to create **a set of test questions**.
+Each question must relate directly to the topic.
 
-                        {text}
+Here are the **strict instructions**:
+1. Only create questions that align **directly with the topic** '{topic}'.
+2. Ignore any content that does not fit the topic precisely.
+3. Ensure a mix of **short-answer** and **true/false** questions.
+4. Format the output like this:
 
-                        The questions should be a combination of **short-answer** and **true/false** types. Ensure that all questions are related to the topic '{topic}' and that no irrelevant questions are generated.
+   Q: [Your question here]  
+   A: [The correct answer extracted from the notes]
 
-                        Format each question and answer like this:
-                        Q: [Your question here]
-                        A: [Your detailed and accurate answer here]",
+5. Do not include any text outside of the **Q: and A:** format.  
+6. Every answer must be concise, accurate, and directly drawn from the provided notes.
+
+Below are the notes you should use:
+
+{text}
+",
                             },
                         },
                         max_tokens = 4096,
-                        temperature = 0.3, // Reduced temperature for more factual and precise responses
+                        temperature = 0.2, // Low temperature for precision
                     }
                 ),
             };
@@ -335,6 +364,7 @@ namespace EnlightDenBackendAPI.Controllers
                 var jsonResponse = JObject.Parse(resultContent);
                 var choices = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString();
 
+                // Split the generated content into Q: and A: pairs
                 var testQuestions = SplitContentIntoPairs(choices, "Test Question");
 
                 return testQuestions;
@@ -599,6 +629,130 @@ namespace EnlightDenBackendAPI.Controllers
             }
 
             return items;
+        }
+
+        [HttpPost("GenerateFlashcardsFromTopic")]
+        public async Task<IActionResult> GenerateFlashcardsFromTopic(
+            [FromBody] GenerateTestRequest request
+        )
+        {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            var mindMap = await _context.MindMaps.FindAsync(request.MindMapId);
+            // Fetch the note content using the noteId from the request
+            var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == mindMap.NoteId);
+
+            if (note == null)
+            {
+                return NotFound("Note not found.");
+            }
+
+            string noteContent = note.Content;
+
+            if (string.IsNullOrEmpty(request.Name) || string.IsNullOrEmpty(noteContent))
+            {
+                return BadRequest("Name and note content are required.");
+            }
+
+            var topicName = await _context.MindMapTopics.FindAsync(request.TopicId);
+
+            // Generate the flashcards based on the note content and the topic
+            var flashcards = await GenerateFlashcardsTopicAsync(noteContent, topicName.Name);
+
+            // Save the generated flashcards and study tool
+            var generatedFlashcardsId = await SaveStudyToolAndQuestionsTopic(
+                flashcards,
+                ContentType.FlashCardSet,
+                user.Id,
+                mindMap.ClassId,
+                request.MindMapId,
+                request.Name,
+                request.TopicId
+            );
+
+            // Return the generated flashcards ID (adjust this based on your actual logic)
+            return Ok(new { FlashcardsId = generatedFlashcardsId });
+        }
+
+        private async Task<List<string>> GenerateFlashcardsTopicAsync(string text, string topic)
+        {
+            var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://api.openai.com/v1/chat/completions"
+            )
+            {
+                Content = JsonContent.Create(
+                    new
+                    {
+                        model = "gpt-4", // Using GPT-4 for precision
+                        messages = new[]
+                        {
+                            new
+                            {
+                                role = "system",
+                                content = @"
+You are an expert educational assistant focused on generating highly precise flashcards. 
+Your sole task is to create flashcards that align strictly with the given topic. 
+Any content or notes that are not directly relevant to the topic should be ignored, no matter how useful they may seem.
+Ensure that each flashcard’s answer contains concise, topic-specific knowledge.",
+                            },
+                            new
+                            {
+                                role = "user",
+                                content = $@"
+You are provided with the following topic: '{topic}'.
+Your task is to create a set of **hyper-specific flashcards** based exclusively on the most relevant parts of the following notes:
+
+{text}
+
+**Strict Instructions:** 
+1. Do NOT generate any content unrelated to the topic '{topic}'.
+2. Ignore any tangential information from the notes.
+3. Ensure each flashcard has a **clear question or prompt** and a **precise answer**, extracted ONLY from the text.
+
+Format each flashcard like this:
+Q: [Highly specific question related to the topic]
+A: [Accurate answer from the notes]",
+                            },
+                        },
+                        max_tokens = 4096,
+                        temperature = 0.2, // Lower temperature for even more factual precision
+                    }
+                ),
+            };
+
+            request.Headers.Add("Authorization", $"Bearer {_openAiApiKey}");
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var resultContent = await response.Content.ReadAsStringAsync();
+                var jsonResponse = JObject.Parse(resultContent);
+                var choices = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString();
+
+                var flashcards = SplitContentIntoPairs(choices, "Flashcard");
+
+                return flashcards;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(
+                    $"OpenAI API error: {response.StatusCode} - {errorContent}"
+                );
+            }
         }
     }
 }

@@ -1,20 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
-using System.Text.RegularExpressions;
 using EnlightDenBackendAPI.Entities;
+using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Microsoft.Extensions.Configuration.UserSecrets;
-using Tesseract;
 using static ApplicationDbContext;
 
 namespace EnlightDenBackendAPI.Controllers
@@ -126,11 +123,11 @@ namespace EnlightDenBackendAPI.Controllers
                 return BadRequest("Please upload a valid file.");
             }
 
-            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            var uploads = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
             Directory.CreateDirectory(uploads);
 
-            var fileName = Path.GetFileName(createNoteDto.File.FileName);
-            var filePath = Path.Combine(uploads, fileName);
+            var fileName = System.IO.Path.GetFileName(createNoteDto.File.FileName);
+            var filePath = System.IO.Path.Combine(uploads, fileName);
 
             // Save the file to the server
             using (var stream = new FileStream(filePath, FileMode.Create))
@@ -139,7 +136,7 @@ namespace EnlightDenBackendAPI.Controllers
             }
 
             // Extract text from PDF using iText 7 and Tesseract OCR
-            string extractedText = ExtractTextFromPdf(filePath);
+            string extractedText = ExtractTextWithPreciseSpacing(filePath);
 
             // Create a new Note instance using the DTO and extracted text
             var note = new Note
@@ -172,11 +169,9 @@ namespace EnlightDenBackendAPI.Controllers
         }
 
         // Method to extract text from PDF using iText 7 and Tesseract OCR
-        // Method to extract text from PDF using iText 7 and Tesseract OCR
-        private string ExtractTextFromPdf(string filePath)
+        private string ExtractTextWithPreciseSpacing(string filePath)
         {
             StringBuilder textBuilder = new StringBuilder();
-            string tessdataPath = @"./tessdata"; // Assuming tessdata is in the project root
 
             using (PdfReader pdfReader = new PdfReader(filePath))
             using (PdfDocument pdfDocument = new PdfDocument(pdfReader))
@@ -185,65 +180,69 @@ namespace EnlightDenBackendAPI.Controllers
                 {
                     var page = pdfDocument.GetPage(i);
 
-                    // Extract embedded text using iText 7
-                    var text = PdfTextExtractor.GetTextFromPage(page);
+                    // Use LocationTextExtractionStrategy for the initial extraction
+                    var strategy = new LocationTextExtractionStrategy();
+                    string extractedText = PdfTextExtractor.GetTextFromPage(page, strategy);
 
-                    // If embedded text is found, append it
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        textBuilder.AppendLine(text);
-                    }
-                    else
-                    {
-                        // If no embedded text, try to extract images and perform OCR
-                        var resources = page.GetResources();
-                        var xObjectNames = resources.GetResourceNames();
+                    // Fix spacing issues and format the text correctly
+                    string fixedText = FixSpacingIssues(extractedText);
 
-                        foreach (var xObjectName in xObjectNames)
-                        {
-                            try
-                            {
-                                var xObject = resources.GetImage(xObjectName);
-                                if (xObject != null)
-                                {
-                                    using (
-                                        var imageStream = new MemoryStream(
-                                            xObject.GetImageBytes(true)
-                                        )
-                                    )
-                                    {
-                                        using (
-                                            var ocrEngine = new TesseractEngine(
-                                                tessdataPath,
-                                                "eng",
-                                                EngineMode.Default
-                                            )
-                                        )
-                                        {
-                                            var imagePix = Pix.LoadFromMemory(
-                                                imageStream.ToArray()
-                                            );
-                                            using (var pageText = ocrEngine.Process(imagePix))
-                                            {
-                                                textBuilder.AppendLine(pageText.GetText()); // Append OCR result
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                // Log or handle exceptions related to image extraction or OCR
-                                Console.WriteLine(
-                                    $"Error processing image for OCR on page {i}: {ex.Message}"
-                                );
-                            }
-                        }
+                    if (!string.IsNullOrWhiteSpace(fixedText))
+                    {
+                        textBuilder.AppendLine(CleanText(fixedText));
                     }
                 }
             }
 
             return textBuilder.ToString();
+        }
+
+        private string CleanText(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // Remove any null bytes and trim leading/trailing whitespace
+            return input.Replace("\0", "").Trim();
+        }
+
+        private string FixSpacingIssues(string text)
+        {
+            // Step 1: Handle merged words with uppercase letters (e.g., "wordAnother")
+            string fixedText = System.Text.RegularExpressions.Regex.Replace(
+                text,
+                @"([a-z])([A-Z])",
+                "$1 $2"
+            );
+
+            // Step 2: Handle missing spaces around punctuation (e.g., "end.This")
+            fixedText = System.Text.RegularExpressions.Regex.Replace(
+                fixedText,
+                @"([.,!?;:])([^\s])",
+                "$1 $2"
+            );
+
+            // Step 3: Handle missing spaces between words (e.g., "TypesofWords")
+            fixedText = System.Text.RegularExpressions.Regex.Replace(
+                fixedText,
+                @"([a-zA-Z])([a-zA-Z]{2,})",
+                "$1 $2"
+            );
+
+            // Step 4: Reduce multiple spaces to a single space
+            fixedText = System.Text.RegularExpressions.Regex.Replace(fixedText, @"\s{2,}", " ");
+
+            // Step 5: Ensure newlines after periods, exclamations, or question marks
+            fixedText = System.Text.RegularExpressions.Regex.Replace(
+                fixedText,
+                @"(?<=[.!?])\s",
+                "\n"
+            );
+
+            // Step 6: Clean any leading or trailing spaces around newlines
+            fixedText = fixedText.Replace("\n ", "\n").Replace(" \n", "\n");
+
+            return fixedText.Trim();
         }
 
         [HttpDelete("{id}")]
