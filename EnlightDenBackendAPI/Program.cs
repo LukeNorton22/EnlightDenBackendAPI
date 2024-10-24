@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Load environment variables from .env file
@@ -20,27 +19,35 @@ if (File.Exists(envFilePath))
 }
 else
 {
-    throw new Exception(".env file not found. Please create one with the required environment variables.");
+    throw new Exception(
+        ".env file not found. Please create one with the required environment variables."
+    );
 }
 
-
-
 // Read API key and connection string from environment variables
-string openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") 
-    ?? throw new InvalidOperationException("OPENAI_API_KEY is not set in the environment variables.");
+string openAiApiKey =
+    Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+    ?? throw new InvalidOperationException(
+        "OPENAI_API_KEY is not set in the environment variables."
+    );
 
-string connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
-    ?? throw new InvalidOperationException("CONNECTION_STRING is not set in the environment variables.");
+string connectionString =
+    Environment.GetEnvironmentVariable("CONNECTION_STRING")
+    ?? throw new InvalidOperationException(
+        "CONNECTION_STRING is not set in the environment variables."
+    );
 
-string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") 
+string jwtKey =
+    Environment.GetEnvironmentVariable("JWT_KEY")
     ?? throw new InvalidOperationException("JWT_KEY is not set in the environment variables.");
 
-string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
+string jwtIssuer =
+    Environment.GetEnvironmentVariable("JWT_ISSUER")
     ?? throw new InvalidOperationException("JWT_ISSUER is not set in the environment variables.");
 
-string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+string jwtAudience =
+    Environment.GetEnvironmentVariable("JWT_AUDIENCE")
     ?? throw new InvalidOperationException("JWT_AUDIENCE is not set in the environment variables.");
-
 
 // Validate that JWT configuration is not missing
 if (
@@ -77,7 +84,6 @@ builder.Services.AddCors(options =>
 // Add Swagger with JWT Bearer configuration
 builder.Services.AddSwaggerGen(c =>
 {
-    // Add JWT Bearer authentication to Swagger
     c.AddSecurityDefinition(
         "Bearer",
         new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -88,7 +94,7 @@ builder.Services.AddSwaggerGen(c =>
             BearerFormat = "JWT",
             In = Microsoft.OpenApi.Models.ParameterLocation.Header,
             Description =
-                "Enter 'Bearer' [space] and then your valid token in the text input below.\r\n\r\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\"",
+                "Enter 'Bearer' [space] and then your valid token.\r\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\"",
         }
     );
 
@@ -136,10 +142,7 @@ builder
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey)
-            ) // Use the key from the .env
-            ,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         };
     });
 
@@ -148,7 +151,23 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Run migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    try
+    {
+        await dbContext.Database.MigrateAsync(); // Apply any pending migrations
+        Console.WriteLine("Migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred while migrating the database: {ex.Message}");
+        throw; // Handle or log exceptions based on your needs
+    }
+}
+
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -156,14 +175,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// Use Authentication & Authorization middleware
 app.UseAuthentication(); // Enable Authentication Middleware
 app.UseAuthorization(); // Enable Authorization Middleware
-
-// Enable CORS for frontend
-app.UseCors("AllowFrontend");
-
-app.MapControllers();
+app.UseCors("AllowFrontend"); // Enable CORS for frontend
+app.MapControllers(); // Map controller endpoints
 
 app.Run();
