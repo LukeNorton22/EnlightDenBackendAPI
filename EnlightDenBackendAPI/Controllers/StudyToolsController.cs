@@ -312,11 +312,11 @@ namespace EnlightDenBackendAPI.Controllers
 
                         {text}
 
-                        The questions should be a combination of **short-answer** and **true/false** types. Ensure that all questions are related to the topic '{topic}' and that no irrelevant questions are generated.
+                        The questions should be **true/false** types. Ensure that all questions are related to the topic '{topic}' and that no irrelevant questions are generated.
 
                         Format each question and answer like this:
                         Q: [Your question here]
-                        A: [Your detailed and accurate answer here]",
+                        A: [True/False]",
                             },
                         },
                         max_tokens = 4096,
@@ -422,6 +422,8 @@ namespace EnlightDenBackendAPI.Controllers
             }
         }
 
+        // Generate test questions based on the provided text
+
         private async Task<List<string>> GenerateTestQuestionsAsync(string text)
         {
             var request = new HttpRequestMessage(
@@ -443,7 +445,7 @@ namespace EnlightDenBackendAPI.Controllers
                             new
                             {
                                 role = "user",
-                                content = $"Create a test consisting of at least 10 short-answer and true/false questions based on the following text, label them Q: and A:: {text}",
+                                content = $"Create a test consisting of at least 10 true/false questions based on the following text, label them Q: and A:: {text}",
                             },
                         },
                         max_tokens = 1500,
@@ -474,6 +476,111 @@ namespace EnlightDenBackendAPI.Controllers
                 );
             }
         }
+
+        [HttpPost("GradeTest")]
+        public async Task<IActionResult> GradeTest([FromBody] GradeTestRequest request)
+        {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            var studyTool = await _context.StudyTools.Include(st => st.Questions)
+                .FirstOrDefaultAsync(st => st.Id == request.StudyToolId);
+
+            if (studyTool == null)
+            {
+                return NotFound("Study tool not found.");
+            }
+
+            var gradingResults = new List<object>();
+            int correctCount = 0;
+
+            foreach (var userAnswer in request.UserAnswers)
+            {
+                var correctAnswer = studyTool.Questions
+                    .FirstOrDefault(q => q.Id == userAnswer.QuestionId)?.Answer.Trim().ToLower();
+
+                if (correctAnswer != null)
+                {
+                    var isCorrect = await IsAnswerCorrect(userAnswer.UserResponse, correctAnswer);
+                    gradingResults.Add(new { QuestionId = userAnswer.QuestionId, Correct = isCorrect ? 1 : 0 });
+
+                    if (isCorrect)
+                    {
+                        correctCount++;
+                    }
+                }
+            }
+
+            var score = correctCount;
+
+            return Ok(new { Score = score, GradingResults = gradingResults });
+        }
+
+        private async Task<bool> IsAnswerCorrect(string userResponse, string correctAnswer)
+        {
+            var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://api.openai.com/v1/chat/completions"
+            )
+            {
+                Content = JsonContent.Create(
+                    new
+                    {
+                        model = "gpt-4",
+                        messages = new[]
+                        {
+                            new
+                            {
+                                role = "system",
+                                content = "You are an expert educational assistant tasked with grading test answers. Determine if the user's answer is close enough to the correct answer."
+                            },
+                            new
+                            {
+                                role = "user",
+                                content = $@"
+                                Correct Answer: '{correctAnswer}'
+                                User Response: '{userResponse}'
+                                Is the user's response close enough to the correct answer? Respond with 'yes' or 'no'."
+                            }
+                        },
+                        max_tokens = 50,
+                        temperature = 0.0
+                    }
+                ),
+            };
+
+            request.Headers.Add("Authorization", $"Bearer {_openAiApiKey}");
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var resultContent = await response.Content.ReadAsStringAsync();
+                var jsonResponse = JObject.Parse(resultContent);
+                var answer = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString().Trim().ToLower();
+
+                return answer == "yes";
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"OpenAI API error: {response.StatusCode} - {errorContent}");
+            }
+        }
+
+
+
+
 
         private async Task SaveStudyToolAndQuestions(
             List<string> items,

@@ -41,3 +41,15 @@ public class QuestionDTO
     public required string Answer { get; set; }
     public QuestionType QuestionType { get; set; }
 }
+
+    public class GradeTestRequest
+    {
+        public Guid StudyToolId { get; set; }
+        public List<UserAnswer> UserAnswers { get; set; }
+    }
+
+    public class UserAnswer
+    {
+        public Guid QuestionId { get; set; }
+        public string UserResponse { get; set; }
+    }
