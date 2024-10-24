@@ -10,7 +10,7 @@ public class Note
     public required string UserId { get; set; }
     public Class? Class { get; set; }
     public Guid ClassId { get; set; }
-
+    public required string Content { get; set; }
     public required string FilePath { get; set; }
 }
 
@@ -30,15 +30,13 @@ public class GetNoteDto
     public required string UserId { get; set; }
     public Guid ClassId { get; set; }
     public required string FilePath { get; set; }
+    public string Content { get; set; }
+    public bool HasMindMap { get; set; }
 }
 
 public class UpdateNoteDto
 {
-    public required string Title { get; set; }
-
-    public long UpdateDate { get; set; }
+    public string Title { get; set; }
 
     public Guid ClassId { get; set; }
-
-    public IFormFile? File { get; set; }
 }

@@ -13,6 +13,7 @@ public class StudyTool
     public Guid ClassId { get; set; }
     public MindMap? MindMap { get; set; }
     public Guid MindMapId { get; set; }
+    public Guid TopicId { get; set; }
     public ContentType ContentType { get; set; }
 }
 

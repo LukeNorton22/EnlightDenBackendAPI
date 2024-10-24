@@ -126,11 +126,11 @@ namespace EnlightDenBackendAPI.Controllers
             string extractedText;
             using (var stream = new FileStream(note.FilePath, FileMode.Open, FileAccess.Read))
             {
-                extractedText = ExtractTextFromPdf(stream); // Implement this method to extract text from PDF
+                extractedText = ExtractTextFromPdf(stream);
             }
 
             // Generate mind map topics from the extracted text
-            var mindMapTopics = await GenerateMindMapTopicsAsync(extractedText);
+            var mindMapTopics = await GenerateMindMapTopicsAsync(note.Content);
 
             var mindMap = new MindMap
             {
@@ -139,6 +139,7 @@ namespace EnlightDenBackendAPI.Controllers
                 ClassId = note.ClassId,
                 UserId = note.UserId,
                 Topics = new List<MindMapTopic>(),
+                NoteId = noteId,
             };
 
             foreach (var topic in mindMapTopics)
@@ -179,6 +180,28 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok(mindMaps);
         }
 
+        [HttpGet("GetNoteContentFromMindMap/{mindMapId}")]
+        public async Task<ActionResult<string>> GetNoteContentFromMindMap(Guid mindMapId)
+        {
+            // Retrieve the mind map, including its associated note
+            var mindMap = await _context.MindMaps.FirstOrDefaultAsync(mm => mm.Id == mindMapId);
+
+            var noteContent = await _context.Notes.FirstOrDefaultAsync(_ => _.Id == mindMap.NoteId);
+
+            if (mindMap == null)
+            {
+                return NotFound($"MindMap with ID {mindMapId} not found.");
+            }
+
+            // Return the note content
+            if (noteContent == null)
+            {
+                return NotFound($"Note associated with MindMap {mindMapId} not found.");
+            }
+
+            return Ok(noteContent.Content); // Return note content
+        }
+
         [HttpGet("GetMindMapById/{id}")]
         public async Task<ActionResult<GetMindMapDTO>> GetMindMapById(Guid id)
         {
@@ -198,6 +221,33 @@ namespace EnlightDenBackendAPI.Controllers
             if (mindMap == null)
             {
                 return NotFound($"MindMap with ID {id} not found.");
+            }
+
+            return Ok(mindMap);
+        }
+
+        [HttpGet("GetMindMapByNoteId/{noteId}")]
+        public async Task<ActionResult<GetMindMapDTO>> GetMindMapByNoteId(Guid noteId)
+        {
+            // Now, find the MindMap that has the same ClassId as the note
+            var mindMap = await _context
+                .MindMaps.Include(mm => mm.Topics) // Include topics for the mind map
+                .Where(mm => mm.NoteId == noteId)
+                .Select(mm => new GetMindMapDTO
+                {
+                    Id = mm.Id,
+                    Name = mm.Name,
+                    Topics = mm
+                        .Topics.Select(t => new MindMapTopicsDTO { Id = t.Id, Topic = t.Name })
+                        .ToList(),
+                    NoteId = mm.NoteId,
+                    ClassId = mm.ClassId,
+                })
+                .FirstOrDefaultAsync();
+
+            if (mindMap == null)
+            {
+                return NotFound($"MindMap not found for note with ID {noteId}.");
             }
 
             return Ok(mindMap);
@@ -252,26 +302,34 @@ namespace EnlightDenBackendAPI.Controllers
                 Content = JsonContent.Create(
                     new
                     {
-                        model = "gpt-3.5-turbo",
+                        model = "gpt-4",
                         messages = new[]
                         {
                             new
                             {
                                 role = "system",
-                                content = "You are a helpful assistant that generates mind map topics.",
+                                content = "You are an assistant focused on extracting only the most essential, broad, and high-level topics from academic and study notes.",
                             },
                             new
                             {
                                 role = "user",
-                                content = $"Extract the main topics from the following text, only return the topic names from this text, and do not number them: {text}",
+                                content = $@"
+The goal is to extract only the central, overarching topics from the following text. 
+Avoid picking up any subtopics, minor ideas, or details. Focus solely on the biggest themes or concepts. 
+Each topic should represent a broad idea or main category that encompasses other subtopics.
+
+Do not provide numbered or bulleted lists—only return the topics as a comma-separated string. 
+Make sure topics are concise, written in title case, and truly significant. This is text extracted from a PDF. Keep the topics broad and overarching Here is the text: {text}",
                             },
                         },
-                        max_tokens = 1500,
-                        temperature = 0.5,
+                        max_tokens = 2000, // Adjusted to balance coverage and focus
+                        temperature = 0.2 // Lowered for highly deterministic results
+                        ,
                     }
                 ),
             };
 
+            // Add OpenAI API authorization key
             request.Headers.Add("Authorization", $"Bearer {_openAiApiKey}");
 
             var response = await _httpClient.SendAsync(request);
@@ -281,9 +339,12 @@ namespace EnlightDenBackendAPI.Controllers
                 var resultContent = await response.Content.ReadAsStringAsync();
                 var jsonResponse = JObject.Parse(resultContent);
                 var choices = jsonResponse["choices"]?.First?["message"]?["content"]?.ToString();
+
+                // Ensure topics are split correctly and irrelevant content is filtered out
                 var topics = choices
                     ?.Split(new[] { '\n', ',' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(t => t.Trim())
+                    .Select(t => t.Trim().TrimStart('-')) // Trim spaces and dashes
+                    .Where(t => !string.IsNullOrWhiteSpace(t) && t.Length > 3) // Filter small or empty topics
                     .ToList();
 
                 return topics ?? new List<string>();

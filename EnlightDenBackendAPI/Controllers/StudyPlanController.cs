@@ -1,30 +1,45 @@
-﻿using EnlightDenBackendAPI.Entities;
+﻿using System.Security.Claims;
+using EnlightDenBackendAPI.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EnlightDenBackendAPI.Controllers
 {
-    [ApiController]
-    [Route("api/studyplans")]
     [Authorize]
-    public class StudyPlanController: ControllerBase
+    [ApiController]
+    [Route("api/StudyPlans")]
+    public class StudyPlanController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public StudyPlanController(ApplicationDbContext context)
+        public StudyPlanController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager
+        )
         {
             _context = context;
+            _userManager = userManager;
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateStudyPlan([FromBody] CreateStudyPlanDto createStudyPlanDto)
+        public async Task<IActionResult> CreateStudyPlan(
+            [FromBody] CreateStudyPlanDto createStudyPlanDto
+        )
         {
-            var user = await _context.Users.FindAsync(createStudyPlanDto.UserId);
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
 
-            if (user == null)
+            if (string.IsNullOrEmpty(userIdClaim))
             {
-                return BadRequest("User not found.");
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
             }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
 
             var studyPlan = new StudyPlan
             {
@@ -34,7 +49,7 @@ namespace EnlightDenBackendAPI.Controllers
                 Month = createStudyPlanDto.Month,
                 StartTime = createStudyPlanDto.StartTime,
                 EndTime = createStudyPlanDto.EndTime,
-                UserId = createStudyPlanDto.UserId
+                UserId = user.Id,
             };
 
             _context.StudyPlans.Add(studyPlan);
@@ -49,7 +64,7 @@ namespace EnlightDenBackendAPI.Controllers
                 Month = studyPlan.Month,
                 StartTime = studyPlan.StartTime,
                 EndTime = studyPlan.EndTime,
-                UserId = studyPlan.UserId
+                UserId = studyPlan.UserId,
             };
 
             return CreatedAtAction(nameof(GetStudyPlanById), new { id = studyPlan.Id }, response);
@@ -58,8 +73,8 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpGet]
         public IActionResult GetAllStudyPlans()
         {
-            var studyPlans = _context.StudyPlans
-                .Select(studyPlan => new GetStudyPlanDto
+            var studyPlans = _context
+                .StudyPlans.Select(studyPlan => new GetStudyPlanDto
                 {
                     Id = studyPlan.Id,
                     Name = studyPlan.Name,
@@ -68,7 +83,7 @@ namespace EnlightDenBackendAPI.Controllers
                     Month = studyPlan.Month,
                     StartTime = studyPlan.StartTime,
                     EndTime = studyPlan.EndTime,
-                    UserId = studyPlan.UserId
+                    UserId = studyPlan.UserId,
                 })
                 .ToList();
             return Ok(studyPlans);
@@ -93,14 +108,54 @@ namespace EnlightDenBackendAPI.Controllers
                 Month = studyPlan.Month,
                 StartTime = studyPlan.StartTime,
                 EndTime = studyPlan.EndTime,
-                UserId = studyPlan.UserId
+                UserId = studyPlan.UserId,
             };
 
             return Ok(response);
         }
 
+        [HttpGet("GetByUserId")]
+        public async Task<IActionResult> GetStudyPlansForUser()
+        {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            // Find the user
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+
+            // Fetch all classes associated with the user
+            var userClasses = _context
+                .Classes.Where(c => c.UserId == user.Id)
+                .Select(c => new GetClassDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    UserId = c.UserId,
+                })
+                .ToList();
+
+            return Ok(userClasses);
+        }
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateStudyPlan(Guid id, [FromBody] UpdateStudyPlanDto updateStudyPlanDto)
+        public async Task<IActionResult> UpdateStudyPlan(
+            Guid id,
+            [FromBody] UpdateStudyPlanDto updateStudyPlanDto
+        )
         {
             var studyPlan = await _context.StudyPlans.FindAsync(id);
 
@@ -127,7 +182,7 @@ namespace EnlightDenBackendAPI.Controllers
                 Month = studyPlan.Month,
                 StartTime = studyPlan.StartTime,
                 EndTime = studyPlan.EndTime,
-                UserId = studyPlan.UserId
+                UserId = studyPlan.UserId,
             };
 
             return Ok(response);
@@ -148,6 +203,5 @@ namespace EnlightDenBackendAPI.Controllers
 
             return Ok("Study plan deleted.");
         }
-
     }
 }

@@ -123,6 +123,9 @@ namespace EnlightDenBackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("NoteId")
+                        .HasColumnType("uuid");
+
                     b.Property<List<Guid>>("TopicIds")
                         .IsRequired()
                         .HasColumnType("uuid[]");
@@ -169,6 +172,10 @@ namespace EnlightDenBackendAPI.Migrations
 
                     b.Property<Guid>("ClassId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<long>("CreateDate")
                         .HasColumnType("bigint");
@@ -284,6 +291,9 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid>("TopicId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("UserId")
                         .IsRequired()
