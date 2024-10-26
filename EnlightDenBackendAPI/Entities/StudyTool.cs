@@ -21,6 +21,7 @@ public enum ContentType
 {
     Test = 1,
     FlashCardSet = 2,
+    StudyModule = 3,
 }
 
 public class GetStudyToolsDTO
