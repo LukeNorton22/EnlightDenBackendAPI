@@ -17,11 +17,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<MindMapTopic> MindMapTopics { get; set; }
     public DbSet<Question> Questions { get; set; }
     public DbSet<StudyTool> StudyTools { get; set; }
+    public DbSet<StudyModule> StudyModules { get; set; }
 
     //Apply the configurations each time they are created.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        // Set default schema
+        modelBuilder.HasDefaultSchema("General");
 
         // Apply configurations
         modelBuilder.ApplyConfiguration(new UserConfig());
@@ -32,6 +35,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.ApplyConfiguration(new MindMapTopicConfig());
         modelBuilder.ApplyConfiguration(new QuestionConfig());
         modelBuilder.ApplyConfiguration(new StudyToolConfig());
+        modelBuilder.ApplyConfiguration(new StudyModuleConfig());
     }
 
     public async Task<bool> ClassNameExistsForUserAsync(string className, string userId)

@@ -3,11 +3,11 @@
     public class StudyModule
     {
         public Guid Id { get; set; }
-        public string MainTopic { get; set; }
-        public List<SubTopic> SubTopics { get; set; } = new List<SubTopic>();
-        public List<PracticeTest> PracticeTests { get; set; } = new List<PracticeTest>
+        public required string MainTopic { get; set; }
+        public List<SubTopic> SubTopics  { get; set; } = new List<SubTopic>();
+        public List<PracticeTest> PracticeTests { get; set; } = new List<PracticeTest>();
         public Guid StudyToolId { get; set; }
-        public StudyTool StudyTool { get; set; }
+        public required StudyTool StudyTool { get; set; }
     }
 
     public class SubTopic
