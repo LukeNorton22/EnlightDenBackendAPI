@@ -13,10 +13,9 @@ namespace EnlightDenBackendAPI.Entities.Configurations
 
             builder
                 .HasOne(sm =>  sm.StudyTool)
-
-                .WithMany(st => st.StudyModules)
-                .HasForeignKey(sm => sm.StudyToolId);
-        }
+                .WithOne(st => st.StudyModule)
+                .HasForeignKey<StudyModule>(sm => sm.StudyToolId);
+        }   
     }
 
 }

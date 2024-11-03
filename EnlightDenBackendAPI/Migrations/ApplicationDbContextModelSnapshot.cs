@@ -276,7 +276,8 @@ namespace EnlightDenBackendAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StudyToolId");
+                    b.HasIndex("StudyToolId")
+                        .IsUnique();
 
                     b.ToTable("StudyModule", "General");
                 });
@@ -627,8 +628,8 @@ namespace EnlightDenBackendAPI.Migrations
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyModule", b =>
                 {
                     b.HasOne("EnlightDenBackendAPI.Entities.StudyTool", "StudyTool")
-                        .WithMany("StudyModules")
-                        .HasForeignKey("StudyToolId")
+                        .WithOne("StudyModule")
+                        .HasForeignKey("EnlightDenBackendAPI.Entities.StudyModule", "StudyToolId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -747,7 +748,7 @@ namespace EnlightDenBackendAPI.Migrations
                 {
                     b.Navigation("Questions");
 
-                    b.Navigation("StudyModules");
+                    b.Navigation("StudyModule");
                 });
 #pragma warning restore 612, 618
         }

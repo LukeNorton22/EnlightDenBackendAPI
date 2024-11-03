@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using EnlightDenBackendAPI.Controllers.Helpers;
 using EnlightDenBackendAPI.Entities; // Assuming your entities are in this namespace
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
@@ -27,17 +28,20 @@ namespace EnlightDenBackendAPI.Controllers
         private readonly string _openAiApiKey;
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly StudyModuleHelper _studyModuleHelper;
 
         public StudyToolsController(
             IConfiguration configuration,
             ApplicationDbContext context,
-            UserManager<ApplicationUser> userManager
+            UserManager<ApplicationUser> userManager,
+            StudyModuleHelper studyModuleHelper
         )
         {
             _httpClient = new HttpClient();
             _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
             _context = context;
             _userManager = userManager;
+            _studyModuleHelper = studyModuleHelper;
         }
 
         [HttpPost("GenerateFlashcards")]
@@ -754,5 +758,58 @@ A: [Accurate answer from the notes]",
                 );
             }
         }
+
+        [HttpPost("GenerateStudyModule")]
+        public async Task<IActionResult> GenerateStudyModuleFromNote(
+        Guid mindMapTopicId,
+        Guid classId,
+        string name)
+        {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is authenticated but no valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            // Retrieve the note content and main topic from the database or other source
+            var note = await _context.Notes.FindAsync(mindMapTopicId);
+            if (note == null)
+            {
+                return NotFound("Note not found.");
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var studyTool = new StudyTool
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                UserId = userId,
+                ClassId = classId,
+                MindMapId = mindMapTopicId,
+                ContentType = ContentType.StudyModule
+            };
+
+            // Create the study module from the note content
+            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(note.Content, note.Title, studyTool);
+
+            // Save the study tool and study module to the database
+            studyTool.StudyModule = studyModule;
+            studyTool.StudyModuleId = studyModule.Id;
+            _context.StudyTools.Add(studyTool);
+            _context.StudyModules.Add(studyModule);
+            await _context.SaveChangesAsync();
+
+            return Ok(studyModule);
+        }
+
+
+
     }
 }
