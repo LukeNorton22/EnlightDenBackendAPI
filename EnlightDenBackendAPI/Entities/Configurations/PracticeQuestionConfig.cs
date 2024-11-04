@@ -14,7 +14,8 @@ namespace EnlightDenBackendAPI.Entities.Configurations
             builder
                 .HasOne(pq => pq.PracticeTest)
                 .WithMany(pt => pt.PracticeQuestions)
-                .HasForeignKey(pq => pq.PracticeTestId);
+                .HasForeignKey(pq => pq.PracticeTestId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

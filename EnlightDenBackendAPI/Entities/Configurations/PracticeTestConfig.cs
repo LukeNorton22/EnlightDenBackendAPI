@@ -7,13 +7,15 @@ namespace EnlightDenBackendAPI.Entities.Configurations
     {
         public void Configure(EntityTypeBuilder<PracticeTest> builder)
         {
+
             builder.ToTable("PracticeTest", "General");
             builder.HasKey(pt => pt.Id);
 
             builder
                 .HasOne(pt => pt.StudyModule)
                 .WithMany(sm => sm.PracticeTests)
-                .HasForeignKey(pt => pt.StudyModuleId);
+                .HasForeignKey(pt => pt.StudyModuleId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

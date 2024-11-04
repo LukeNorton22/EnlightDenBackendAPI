@@ -70,18 +70,18 @@ namespace EnlightDenBackendAPI.Controllers.Helpers
                         model = "gpt-4",
                         messages = new[]
                         {
-                            new
-                            {
-                                role = "system",
-                                content = @"
+                    new
+                    {
+                        role = "system",
+                        content = @"
 You are an expert educational assistant tasked with generating highly specific subtopics from the provided main topic
 and notes. Your job is to create subtopics with corresponding content that give greater detailed information on that subtopic. 
 The output must strictly follow the given format, and irrelevant or off-topic content should be excluded entirely.",
-                            },
-                            new
-                            {
-                                role = "user",
-                                content = $@"
+                    },
+                    new
+                    {
+                        role = "user",
+                        content = $@"
 The main topic for these subtopics is: **'{mainTopic}'**.
 Use the most relevant content from the following notes to create **a set of subtopics with detailed content**.
 Each subtopic must relate directly to the main topic.
@@ -102,7 +102,7 @@ Below are the notes you should use:
 
 {noteContent}
 ",
-                            },
+                    },
                         },
                         max_tokens = 4096,
                         temperature = 0.2,
@@ -141,7 +141,9 @@ Below are the notes you should use:
                         {
                             Id = Guid.NewGuid(),
                             Title = line.Substring("SubTopic:".Length).Trim(),
-                            Content = string.Empty
+                            Content = string.Empty,
+                            StudyModule = null, // This will be set later
+                            StudyModuleId = Guid.Empty // This will be set later
                         };
                     }
                     else if (line.StartsWith("Content:") && currentSubTopic != null)
@@ -179,18 +181,18 @@ Below are the notes you should use:
                         model = "gpt-4",
                         messages = new[]
                         {
-                            new
-                            {
-                                role = "system",
-                                content = @"
+                    new
+                    {
+                        role = "system",
+                        content = @"
 You are an expert educational assistant tasked with generating practice test questions and answers from the provided notes. 
 Your job is to create questions that are relevant and directly drawn from the provided notes. 
 The output must strictly follow the given format, and irrelevant or off-topic content should be excluded entirely.",
-                            },
-                            new
-                            {
-                                role = "user",
-                                content = $@"
+                    },
+                    new
+                    {
+                        role = "user",
+                        content = $@"
 Use the most relevant content from the following notes to create **a set of practice test questions and answers**.
 Each question must relate directly to the content of the notes.
 
@@ -210,7 +212,7 @@ Below are the notes you should use:
 
 {noteContent}
 ",
-                            },
+                    },
                         },
                         max_tokens = 4096,
                         temperature = 0.2,
@@ -248,7 +250,9 @@ Below are the notes you should use:
                         currentPracticeTest = new PracticeTest
                         {
                             Id = Guid.NewGuid(),
-                            PracticeQuestions = new List<PracticeQuestion>()
+                            PracticeQuestions = new List<PracticeQuestion>(),
+                            StudyModule = null, // This will be set later
+                            StudyModuleId = Guid.Empty // This will be set later
                         };
                     }
                     else if (line.StartsWith("Answer:") && currentPracticeTest != null)
@@ -257,7 +261,9 @@ Below are the notes you should use:
                         {
                             Id = Guid.NewGuid(),
                             Request = currentPracticeTest.PracticeQuestions.Last().Request,
-                            Answer = line.Substring("Answer:".Length).Trim()
+                            Answer = line.Substring("Answer:".Length).Trim(),
+                            PracticeTest = currentPracticeTest,
+                            PracticeTestId = currentPracticeTest.Id
                         };
                         currentPracticeTest.PracticeQuestions.Add(practiceQuestion);
                     }
@@ -278,5 +284,6 @@ Below are the notes you should use:
                 );
             }
         }
+
     }
 }

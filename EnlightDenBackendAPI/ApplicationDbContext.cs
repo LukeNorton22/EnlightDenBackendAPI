@@ -18,6 +18,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Question> Questions { get; set; }
     public DbSet<StudyTool> StudyTools { get; set; }
     public DbSet<StudyModule> StudyModules { get; set; }
+    public DbSet<SubTopic> SubTopics { get; set; }
     public DbSet<PracticeTest> PracticeTests { get; set; }
     public DbSet<PracticeQuestion> PracticeQuestions { get; set; }
 
@@ -25,8 +26,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        // Set default schema
-        //modelBuilder.HasDefaultSchema("General");
 
         // Apply configurations
         modelBuilder.ApplyConfiguration(new UserConfig());
@@ -38,6 +37,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.ApplyConfiguration(new QuestionConfig());
         modelBuilder.ApplyConfiguration(new StudyToolConfig());
         modelBuilder.ApplyConfiguration(new StudyModuleConfig());
+        modelBuilder.ApplyConfiguration(new SubTopicConfig());
         modelBuilder.ApplyConfiguration(new PracticeTestConfig());
         modelBuilder.ApplyConfiguration(new PracticeQuestionConfig());
     }

@@ -796,7 +796,7 @@ A: [Accurate answer from the notes]",
                 ContentType = ContentType.StudyModule
             };
 
-            // Create the study module from the note content
+            // Create the study module from the note content. Calling the helper method.
             var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(note.Content, note.Title, studyTool);
 
             // Save the study tool and study module to the database

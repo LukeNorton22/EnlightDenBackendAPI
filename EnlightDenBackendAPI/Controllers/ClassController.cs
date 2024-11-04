@@ -108,6 +108,12 @@ namespace EnlightDenBackendAPI.Controllers
 
             var user = await _userManager.FindByIdAsync(userIdClaim);
 
+            // Check if user is null
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
             var classToCreate = new Class
             {
                 Name = createDto.Name,

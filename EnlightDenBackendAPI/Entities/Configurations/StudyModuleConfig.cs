@@ -9,12 +9,14 @@ namespace EnlightDenBackendAPI.Entities.Configurations
         public void Configure(EntityTypeBuilder<StudyModule> builder)
         {
             builder.ToTable("StudyModule", "General");
+
             builder.HasKey(c => c.Id);
 
             builder
                 .HasOne(sm =>  sm.StudyTool)
                 .WithOne(st => st.StudyModule)
-                .HasForeignKey<StudyModule>(sm => sm.StudyToolId);
+                .HasForeignKey<StudyModule>(sm => sm.StudyToolId)
+                .OnDelete(DeleteBehavior.Cascade);
         }   
     }
 
