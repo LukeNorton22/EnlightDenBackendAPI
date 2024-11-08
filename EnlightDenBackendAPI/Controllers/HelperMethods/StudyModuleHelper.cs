@@ -32,7 +32,8 @@ namespace EnlightDenBackendAPI.Controllers.Helpers
                 SubTopics = subTopics,
                 PracticeTests = practiceTests,
                 StudyToolId = studyTool.Id,
-                StudyTool = studyTool
+                StudyTool = studyTool,
+                MindMapId = studyTool.MindMapId
             };
 
             // Update the StudyModule reference in SubTopics and PracticeTests

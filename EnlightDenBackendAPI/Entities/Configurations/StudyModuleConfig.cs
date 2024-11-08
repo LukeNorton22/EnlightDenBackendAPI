@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
 
 namespace EnlightDenBackendAPI.Entities.Configurations
 {
@@ -13,11 +12,22 @@ namespace EnlightDenBackendAPI.Entities.Configurations
             builder.HasKey(c => c.Id);
 
             builder
-                .HasOne(sm =>  sm.StudyTool)
+                .HasOne(sm => sm.StudyTool)
                 .WithOne(st => st.StudyModule)
                 .HasForeignKey<StudyModule>(sm => sm.StudyToolId)
                 .OnDelete(DeleteBehavior.Cascade);
-        }   
-    }
 
+            builder
+                .HasMany(sm => sm.SubTopics)
+                .WithOne(st => st.StudyModule)
+                .HasForeignKey(st => st.StudyModuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder
+                .HasMany(sm => sm.PracticeTests)
+                .WithOne(pt => pt.StudyModule)
+                .HasForeignKey(pt => pt.StudyModuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
 }

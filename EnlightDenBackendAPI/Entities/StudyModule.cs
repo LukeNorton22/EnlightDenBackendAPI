@@ -9,6 +9,7 @@
         public List<PracticeTest> PracticeTests { get; set; } = new List<PracticeTest>();
         public Guid StudyToolId { get; set; }
         public required StudyTool StudyTool { get; set; }
+        public required Guid MindMapId { get; set; }
     }
 
     public class SubTopic

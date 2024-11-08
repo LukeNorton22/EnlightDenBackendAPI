@@ -761,9 +761,8 @@ A: [Accurate answer from the notes]",
 
         [HttpPost("GenerateStudyModule")]
         public async Task<IActionResult> GenerateStudyModuleFromNote(
-        Guid mindMapTopicId,
-        Guid classId,
-        string name)
+            Guid mindMapId,
+            string name)
         {
             var userIdClaim = User
                 .Claims.FirstOrDefault(c =>
@@ -777,37 +776,45 @@ A: [Accurate answer from the notes]",
             }
 
             var user = await _userManager.FindByIdAsync(userIdClaim);
+            {
+                return NotFound("User not found.");
+            }
 
-            // Retrieve the note content and main topic from the database or other source
-            var note = await _context.Notes.FindAsync(mindMapTopicId);
+            var mindMap = await _context.MindMaps.FindAsync(mindMapId);
+            if (mindMap == null)
+            {
+                return NotFound("MindMap not found.");
+            }
+
+            var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == mindMap.NoteId);
             if (note == null)
             {
                 return NotFound("Note not found.");
             }
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string noteContent = note.Content;
+
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(noteContent))
+            {
+                return BadRequest("Name and note content are required.");
+            }
+
             var studyTool = new StudyTool
             {
-                Id = Guid.NewGuid(),
                 Name = name,
-                UserId = userId,
-                ClassId = classId,
-                MindMapId = mindMapTopicId,
+                UserId = user.Id,
+                MindMapId = mindMap.Id,
                 ContentType = ContentType.StudyModule
             };
 
-            // Create the study module from the note content. Calling the helper method.
-            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(note.Content, note.Title, studyTool);
+            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(noteContent, mindMap.Name, studyTool);
 
-            // Save the study tool and study module to the database
-            studyTool.StudyModule = studyModule;
-            studyTool.StudyModuleId = studyModule.Id;
-            _context.StudyTools.Add(studyTool);
             _context.StudyModules.Add(studyModule);
             await _context.SaveChangesAsync();
 
             return Ok(studyModule);
         }
+
 
         [HttpGet("GetStudyModule/{id}")]
         public async Task<IActionResult> GetStudyModuleById(Guid id)
