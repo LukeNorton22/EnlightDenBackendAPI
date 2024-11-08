@@ -809,22 +809,19 @@ A: [Accurate answer from the notes]",
             return Ok(studyModule);
         }
 
-        [HttpDelete("DeleteStudyModule/{id}")]
-        public async Task<IActionResult> DeleteStudyModule(Guid id)
+        [HttpGet("GetStudyModule/{id}")]
+        public async Task<IActionResult> GetStudyModuleById(Guid id)
         {
             var studyModule = await _context.StudyModules
                 .Include(sm => sm.StudyTool)
-                .FirstOrDefaultAsync(sm => sm.StudyToolId == id);
+                .FirstOrDefaultAsync(sm => sm.Id == id);
 
             if (studyModule == null)
             {
                 return NotFound("StudyModule not found.");
             }
 
-            _context.StudyModules.Remove(studyModule);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return Ok(studyModule);
         }
     }
 }
