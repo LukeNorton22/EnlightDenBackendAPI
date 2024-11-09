@@ -24,9 +24,9 @@ namespace EnlightDenBackendAPI.Entities.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder
-                .HasMany(sm => sm.PracticeTests)
+                .HasOne(sm => sm.PracticeTest)
                 .WithOne(pt => pt.StudyModule)
-                .HasForeignKey(pt => pt.StudyModuleId)
+                .HasForeignKey<PracticeTest>(pt => pt.StudyModuleId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

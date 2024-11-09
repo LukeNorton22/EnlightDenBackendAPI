@@ -6,7 +6,7 @@
         public Guid Id { get; set; }
         public required string MainTopic { get; set; }
         public List<SubTopic> SubTopics { get; set; } = new List<SubTopic>();
-        public List<PracticeTest> PracticeTests { get; set; } = new List<PracticeTest>();
+        public PracticeTest PracticeTest { get; set; } 
         public Guid StudyToolId { get; set; }
         public required StudyTool StudyTool { get; set; }
         public required Guid MindMapId { get; set; }
@@ -32,7 +32,7 @@
     public class PracticeQuestion
     {
         public Guid Id  { get; set; }
-        public required string Request { get; set; }
+        public required string Question { get; set; }
         public required string Answer { get; set; }
         public PracticeQuestionType QuestionType { get; set; }
         public Guid PracticeTestId { get; set; }
@@ -42,8 +42,7 @@
     public enum PracticeQuestionType
     {
         MultipleChoice  = 1,
-        TrueFalse = 2,
-        ShortAnswer = 3
+        TrueFalse = 2
     }
 }
 

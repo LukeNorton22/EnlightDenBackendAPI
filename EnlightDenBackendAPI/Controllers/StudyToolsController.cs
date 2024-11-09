@@ -761,57 +761,59 @@ A: [Accurate answer from the notes]",
 
         [HttpPost("GenerateStudyModule")]
         public async Task<IActionResult> GenerateStudyModuleFromNote(
-            Guid mindMapId,
-            string name)
+    Guid mindMapId,
+    string name)
         {
-            var userIdClaim = User
-                .Claims.FirstOrDefault(c =>
-                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
-                )
-                ?.Value;
+            // Get the current user
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized("User is authenticated but no valid user ID claim found.");
-            }
-
-            var user = await _userManager.FindByIdAsync(userIdClaim);
-            {
-                return NotFound("User not found.");
-            }
-
+            // Fetch the MindMap entity using the provided mindMapId
             var mindMap = await _context.MindMaps.FindAsync(mindMapId);
             if (mindMap == null)
             {
                 return NotFound("MindMap not found.");
             }
 
+            var classEntity = await _context.Classes.FindAsync(mindMap.ClassId);
+            if (classEntity == null)
+            {
+                return BadRequest("The specified class does not exist.");
+            }
+
+            // Fetch the Note entity associated with the MindMap
             var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == mindMap.NoteId);
             if (note == null)
             {
                 return NotFound("Note not found.");
             }
 
+            // Extract the note content
             string noteContent = note.Content;
 
+            // Validate the input parameters
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(noteContent))
             {
                 return BadRequest("Name and note content are required.");
             }
 
+            // Create a new StudyTool entity using the UserId from the MindMap
             var studyTool = new StudyTool
             {
                 Name = name,
-                UserId = user.Id,
+                UserId = mindMap.UserId, // Use UserId from MindMap
                 MindMapId = mindMap.Id,
-                ContentType = ContentType.StudyModule
+                ContentType = ContentType.StudyModule,
+                ClassId = classEntity.Id // Corrected from Class to ClassId
             };
 
+            // Create the StudyModule using the StudyModuleHelper
             var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(noteContent, mindMap.Name, studyTool);
 
+            // Add the StudyModule to the database context and save changes
             _context.StudyModules.Add(studyModule);
             await _context.SaveChangesAsync();
 
+            // Return the created StudyModule in the response
             return Ok(studyModule);
         }
 
