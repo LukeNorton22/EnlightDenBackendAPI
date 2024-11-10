@@ -1,4 +1,5 @@
-﻿namespace EnlightDenBackendAPI.Entities
+﻿using System.Text.Json.Serialization;
+namespace EnlightDenBackendAPI.Entities
 
 {
     public class StudyModule
@@ -17,8 +18,10 @@
         public Guid Id  { get; set; }
         public required string Title { get; set; }
         public required string Content { get; set; }
-        public Guid StudyModuleId { get; set; }
-        public required StudyModule StudyModule { get; set; }
+        public required Guid StudyModuleId { get; set; }
+
+        [JsonIgnore]
+        public StudyModule StudyModule { get; set; } = null!;
     }
 
     public class PracticeTest
@@ -35,8 +38,10 @@
         public required string Question { get; set; }
         public required string Answer { get; set; }
         public PracticeQuestionType QuestionType { get; set; }
-        public Guid PracticeTestId { get; set; }
-        public required PracticeTest PracticeTest { get; set; }
+        public required Guid PracticeTestId { get; set; }
+        
+        [JsonIgnore]
+        public PracticeTest PracticeTest { get; set; }
     }
 
     public enum PracticeQuestionType
