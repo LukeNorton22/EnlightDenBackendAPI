@@ -808,7 +808,7 @@ A: [Accurate answer from the notes]",
             };
 
             // Create the StudyModule using the StudyModuleHelper
-            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(noteContent, mindMap.Name, studyTool, MindMapTopicId);
+            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(noteContent, mindMap.Name, studyTool, mindMapTopicId);
 
             // Add the StudyModule to the database context and save changes
             _context.StudyModules.Add(studyModule);
