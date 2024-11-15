@@ -19,8 +19,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<StudyTool> StudyTools { get; set; }
     public DbSet<StudyModule> StudyModules { get; set; }
     public DbSet<SubTopic> SubTopics { get; set; }
-    public DbSet<PracticeTest> PracticeTests { get; set; }
-    public DbSet<PracticeQuestion> PracticeQuestions { get; set; }
 
     //Apply the configurations each time they are created.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -38,8 +36,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.ApplyConfiguration(new StudyToolConfig());
         modelBuilder.ApplyConfiguration(new StudyModuleConfig());
         modelBuilder.ApplyConfiguration(new SubTopicConfig());
-        modelBuilder.ApplyConfiguration(new PracticeTestConfig());
-        modelBuilder.ApplyConfiguration(new PracticeQuestionConfig());
     }
 
     public async Task<bool> ClassNameExistsForUserAsync(string className, string userId)
