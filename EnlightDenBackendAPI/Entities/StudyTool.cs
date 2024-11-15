@@ -13,7 +13,7 @@ public class StudyTool
     public Guid ClassId { get; set; }
     public MindMap? MindMap { get; set; }
     public Guid MindMapId { get; set; }
-    public StudyModule? StudyModule { get; set; } 
+    public StudyModule? StudyModule { get; set; }
     public Guid? StudyModuleId { get; set; }
 
     public Guid TopicId { get; set; }

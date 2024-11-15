@@ -761,8 +761,9 @@ A: [Accurate answer from the notes]",
 
         [HttpPost("GenerateStudyModule")]
         public async Task<IActionResult> GenerateStudyModuleFromNote(
-    Guid mindMapId,
-    string name)
+            Guid mindMapId,
+            Guid mindMapTopicId,
+            string name)
         {
             // Get the current user
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -807,7 +808,7 @@ A: [Accurate answer from the notes]",
             };
 
             // Create the StudyModule using the StudyModuleHelper
-            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(noteContent, mindMap.Name, studyTool);
+            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(noteContent, mindMap.Name, studyTool, MindMapTopicId);
 
             // Add the StudyModule to the database context and save changes
             _context.StudyModules.Add(studyModule);
@@ -832,5 +833,24 @@ A: [Accurate answer from the notes]",
 
             return Ok(studyModule);
         }
+
+        [HttpGet("CheckExistingStudyModule/{topicId}")]
+        public async Task<IActionResult> CheckExistingStudyModule(Guid studyModuleId)
+        {
+            // Query the database to check if the StudyModule exists
+            var studyModuleExists = await _context.StudyModules
+                .AnyAsync(sm => sm.Id == studyModuleId);
+
+            // Return the result
+            if (studyModuleExists)
+            {
+                return Ok(new { exists = true });
+            }
+            else
+            {
+                return NotFound(new { exists = false });
+            }
+        }
+
     }
 }

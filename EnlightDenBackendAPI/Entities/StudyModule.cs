@@ -5,12 +5,12 @@ namespace EnlightDenBackendAPI.Entities
     public class StudyModule
     {
         public Guid Id { get; set; }
-        public required string MainTopic { get; set; }
+        public Guid MindMapTopicId { get; set; }
+        public required MindMapTopic MindMapTopic { get; set; }
+        public required string MindMapTopicName { get; set; }
         public List<SubTopic> SubTopics { get; set; } = new List<SubTopic>();
-        public PracticeTest PracticeTest { get; set; } 
         public Guid StudyToolId { get; set; }
         public required StudyTool StudyTool { get; set; }
-        public required Guid MindMapId { get; set; }
     }
 
     public class SubTopic
@@ -19,35 +19,10 @@ namespace EnlightDenBackendAPI.Entities
         public required string Title { get; set; }
         public required string Content { get; set; }
         public required Guid StudyModuleId { get; set; }
+        public Guid MindMapTopicId { get; set; }
 
         [JsonIgnore]
         public StudyModule StudyModule { get; set; } = null!;
-    }
-
-    public class PracticeTest
-    {
-        public Guid Id  { get; set; }
-        public List<PracticeQuestion> PracticeQuestions { get; set; } = new List<PracticeQuestion>();
-        public Guid StudyModuleId  { get; set; }
-        public required StudyModule StudyModule { get; set; }
-    }
-
-    public class PracticeQuestion
-    {
-        public Guid Id  { get; set; }
-        public required string Question { get; set; }
-        public required string Answer { get; set; }
-        public PracticeQuestionType QuestionType { get; set; }
-        public required Guid PracticeTestId { get; set; }
-        
-        [JsonIgnore]
-        public PracticeTest PracticeTest { get; set; }
-    }
-
-    public enum PracticeQuestionType
-    {
-        MultipleChoice  = 1,
-        TrueFalse = 2
     }
 }
 

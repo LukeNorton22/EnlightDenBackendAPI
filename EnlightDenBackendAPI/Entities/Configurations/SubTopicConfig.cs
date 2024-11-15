@@ -13,7 +13,7 @@ namespace EnlightDenBackendAPI.Entities.Configurations
 
             builder
                 .HasOne(st => st.StudyModule)
-                .WithMany(sm => sm.SubTopics) // 
+                .WithMany(sm => sm.SubTopics)  
                 .HasForeignKey(st => st.StudyModuleId)
                 .OnDelete(DeleteBehavior.Cascade);
         }

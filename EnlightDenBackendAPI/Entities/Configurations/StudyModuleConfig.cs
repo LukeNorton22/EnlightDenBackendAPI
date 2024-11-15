@@ -22,12 +22,6 @@ namespace EnlightDenBackendAPI.Entities.Configurations
                 .WithOne(st => st.StudyModule)
                 .HasForeignKey(st => st.StudyModuleId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            builder
-                .HasOne(sm => sm.PracticeTest)
-                .WithOne(pt => pt.StudyModule)
-                .HasForeignKey<PracticeTest>(pt => pt.StudyModuleId)
-                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

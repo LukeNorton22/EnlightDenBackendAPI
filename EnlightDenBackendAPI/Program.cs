@@ -187,9 +187,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend"); // Enable CORS for frontend
 app.UseAuthentication(); // Enable Authentication Middleware
 app.UseAuthorization(); // Enable Authorization Middleware
-app.UseCors("AllowFrontend"); // Enable CORS for frontend
 app.MapControllers(); // Map controller endpoints
 
 app.Run();
