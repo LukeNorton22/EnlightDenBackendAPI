@@ -20,14 +20,16 @@ namespace EnlightDenBackendAPI.Controllers.Helpers
             _openAiApiKey = openAiApiKey ?? throw new ArgumentNullException(nameof(openAiApiKey));
         }
 
-        public async Task<StudyModule> CreateStudyModuleFromNoteAsync(string noteContent, string mainTopic, StudyTool studyTool, Guid MindMapTopicId)
+        public async Task<StudyModule> CreateStudyModuleFromNoteAsync(string noteContent, string mainTopic, StudyTool studyTool, Guid MindMapTopicId, Guid MindMapId)
         {
             var mindMapTopic = await _context.MindMapTopics.FindAsync(MindMapTopicId);
             var subTopics = await GenerateSubTopicsAsync(noteContent, mainTopic);
+            var mindMapId = MindMapId;
 
             var studyModule = new StudyModule
             {
                 Id = Guid.NewGuid(),
+                MindMapId = MindMapId,
                 MindMapTopicId = MindMapTopicId,
                 MindMapTopic = mindMapTopic = null!, 
                 MindMapTopicName = mainTopic,

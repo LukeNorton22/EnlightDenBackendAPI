@@ -763,7 +763,7 @@ A: [Accurate answer from the notes]",
         public async Task<IActionResult> GenerateStudyModuleFromNote(
             Guid mindMapId,
             Guid mindMapTopicId,
-            string name)
+            string mindMapTopic)
         {
             // Get the current user
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -792,7 +792,7 @@ A: [Accurate answer from the notes]",
             string noteContent = note.Content;
 
             // Validate the input parameters
-            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(noteContent))
+            if (string.IsNullOrEmpty(mindMapTopic) || string.IsNullOrEmpty(noteContent))
             {
                 return BadRequest("Name and note content are required.");
             }
@@ -800,7 +800,7 @@ A: [Accurate answer from the notes]",
             // Create a new StudyTool entity using the UserId from the MindMap
             var studyTool = new StudyTool
             {
-                Name = name,
+                Name = mindMapTopic,
                 UserId = mindMap.UserId, // Use UserId from MindMap
                 MindMapId = mindMap.Id,
                 ContentType = ContentType.StudyModule,
@@ -808,7 +808,7 @@ A: [Accurate answer from the notes]",
             };
 
             // Create the StudyModule using the StudyModuleHelper
-            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(noteContent, mindMap.Name, studyTool, mindMapTopicId);
+            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(noteContent, mindMapTopic, studyTool, mindMapTopicId, mindMapId);
 
             // Add the StudyModule to the database context and save changes
             _context.StudyModules.Add(studyModule);
@@ -818,39 +818,20 @@ A: [Accurate answer from the notes]",
             return Ok(studyModule);
         }
 
-
-        [HttpGet("GetStudyModule/{id}")]
-        public async Task<IActionResult> GetStudyModuleById(Guid id)
+        [HttpGet("CheckExistingStudyModule/{topicId}")]
+        public async Task<IActionResult> CheckExistingStudyModule(Guid topicId)
         {
             var studyModule = await _context.StudyModules
-                .Include(sm => sm.StudyTool)
-                .FirstOrDefaultAsync(sm => sm.Id == id);
+                .FirstOrDefaultAsync(sm => sm.MindMapTopicId == topicId);
 
-            if (studyModule == null)
-            {
-                return NotFound("StudyModule not found.");
-            }
-
-            return Ok(studyModule);
-        }
-
-        [HttpGet("CheckExistingStudyModule/{topicId}")]
-        public async Task<IActionResult> CheckExistingStudyModule(Guid studyModuleId)
-        {
-            // Query the database to check if the StudyModule exists
-            var studyModuleExists = await _context.StudyModules
-                .AnyAsync(sm => sm.Id == studyModuleId);
-
-            // Return the result
-            if (studyModuleExists)
+            if (studyModule != null)
             {
                 return Ok(new { exists = true });
             }
             else
             {
-                return NotFound(new { exists = false });
+                return Ok(new { exists = false });
             }
         }
-
     }
 }
