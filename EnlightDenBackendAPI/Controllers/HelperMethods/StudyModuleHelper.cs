@@ -158,5 +158,35 @@ Below are the notes you should use:
                 );
             }
         }
+
+        public static class StudyModuleMapper
+        {
+            public static StudyModuleDTO MapToDTO(StudyModule studyModule)
+            {
+                return new StudyModuleDTO
+                {
+                    Id = studyModule.Id,
+                    Name = studyModule.MindMapTopicName,
+                    MindMapId = studyModule.MindMapId,
+                    MindMapTopicId = studyModule.MindMapTopicId,
+                    SubTopics = studyModule.SubTopics.Select(st => new StudyModuleSubTopicDTO
+                    {
+                        Id = st.Id,
+                        Title = st.Title,
+                        Content = st.Content
+                    }).ToList()
+                };
+            }
+
+            public static StudyModuleSubTopicDTO MapToSubTopicDTO(SubTopic subTopic)
+            {
+                return new StudyModuleSubTopicDTO
+                {
+                    Id = subTopic.Id,
+                    Title = subTopic.Title,
+                    Content = subTopic.Content
+                };
+            }
+        }
     }
 }

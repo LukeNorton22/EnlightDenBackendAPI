@@ -8,7 +8,7 @@ namespace EnlightDenBackendAPI.Entities
         public required Guid MindMapId { get; set; }    
         public Guid MindMapTopicId { get; set; }
         public required MindMapTopic MindMapTopic { get; set; }
-        public required string MindMapTopicName { get; set; }
+        public required string MindMapTopicName { get; set; } // main topic of Study Module
         public List<SubTopic> SubTopics { get; set; } = new List<SubTopic>();
         public Guid StudyToolId { get; set; }
         public required StudyTool StudyTool { get; set; }
@@ -22,7 +22,6 @@ namespace EnlightDenBackendAPI.Entities
         public required Guid StudyModuleId { get; set; }
         public Guid MindMapTopicId { get; set; }
 
-        [JsonIgnore]
         public StudyModule StudyModule { get; set; } = null!;
     }
 
@@ -31,8 +30,9 @@ namespace EnlightDenBackendAPI.Entities
         public Guid Id { get; set; }
         public string Name { get; set; }
         public Guid MindMapId { get; set; }
+        public Guid MindMapTopicId { get; set; }
         public Guid MindMapTopic { get; set; }
-        public List<SubTopic> SubTopics { get; set; } = new List<SubTopic>();
+        public List<StudyModuleSubTopicDTO> SubTopics { get; set; } = new List<StudyModuleSubTopicDTO>();
     }
 
     public class StudyModuleSubTopicDTO

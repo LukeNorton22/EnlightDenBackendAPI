@@ -814,8 +814,10 @@ A: [Accurate answer from the notes]",
             _context.StudyModules.Add(studyModule);
             await _context.SaveChangesAsync();
 
-            // Return the created StudyModule in the response
-            return Ok(studyModule);
+            var dto = StudyModuleHelper.StudyModuleMapper.MapToDTO(studyModule);
+
+            // Return the DTO
+            return Ok(dto);
         }
 
         [HttpGet("CheckExistingStudyModule/{topicId}")]
