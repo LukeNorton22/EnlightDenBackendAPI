@@ -826,6 +826,10 @@ A: [Accurate answer from the notes]",
             _context.StudyModules.Add(studyModule);
             await _context.SaveChangesAsync();
 
+            studyTool.StudyModuleId = studyModule.Id;
+            _context.StudyTools.Update(studyTool);
+            await _context.SaveChangesAsync();
+
             var dto = StudyModuleHelper.StudyModuleMapper.MapToDTO(studyModule);
 
             return Ok(new
@@ -853,23 +857,23 @@ A: [Accurate answer from the notes]",
             return Ok(new { StudyModuleExists = studyModuleBool, StudyModuleId = studyModuleExists?.Id }); // Return as an object with a key
         }
 
-        [HttpGet("StudyModule/{topicId}")]
-        public async Task<IActionResult> GetStudyModule(Guid topicId)
+        [HttpGet("GetStudyModule/{studyModuleId}")]
+        public async Task<IActionResult> GetStudyModule(Guid studyModuleId)
         {
-            // Fetch the StudyModule entity from the database based on topicId
+            // Fetch the StudyModule entity from the database
             var studyModule = await _context.StudyModules
                 .Include(sm => sm.SubTopics) // Include related SubTopics
-                .FirstOrDefaultAsync(sm => sm.MindMapTopicId == topicId);
+                .FirstOrDefaultAsync(sm => sm.Id == studyModuleId);
 
             if (studyModule == null)
             {
                 return NotFound("Study Module not found.");
             }
 
-            // Map the StudyModule entity to its DTO representation
+            // Map the StudyModule entity to a DTO
             var studyModuleDTO = StudyModuleHelper.StudyModuleMapper.MapToDTO(studyModule);
 
-            // Return the DTO as the response
+            // Return the DTO
             return Ok(studyModuleDTO);
         }
 
