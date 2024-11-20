@@ -759,17 +759,28 @@ A: [Accurate answer from the notes]",
             }
         }
 
-        [HttpPost("GenerateStudyModule")]
-        public async Task<IActionResult> GenerateStudyModuleFromNote(
-            Guid mindMapId,
-            Guid mindMapTopicId,
-            string mindMapTopic)
+        [HttpPost("GenerateStudyModuleFromTopic")]
+        public async Task<IActionResult> GenerateStudyModuleFromNote([FromBody] GenerateStudyModuleRequestDto request)
         {
-            // Get the current user
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
 
-            // Fetch the MindMap entity using the provided mindMapId
-            var mindMap = await _context.MindMaps.FindAsync(mindMapId);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is not authorized. No valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+
+            var mindMap = await _context.MindMaps.FindAsync(request.MindMapId);
             if (mindMap == null)
             {
                 return NotFound("MindMap not found.");
@@ -781,59 +792,86 @@ A: [Accurate answer from the notes]",
                 return BadRequest("The specified class does not exist.");
             }
 
-            // Fetch the Note entity associated with the MindMap
             var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == mindMap.NoteId);
             if (note == null)
             {
                 return NotFound("Note not found.");
             }
 
-            // Extract the note content
             string noteContent = note.Content;
 
-            // Validate the input parameters
-            if (string.IsNullOrEmpty(mindMapTopic) || string.IsNullOrEmpty(noteContent))
+            if (string.IsNullOrEmpty(request.MindMapTopic) || string.IsNullOrEmpty(noteContent))
             {
                 return BadRequest("Name and note content are required.");
             }
 
-            // Create a new StudyTool entity using the UserId from the MindMap
             var studyTool = new StudyTool
             {
-                Name = mindMapTopic,
-                UserId = mindMap.UserId, // Use UserId from MindMap
+                Name = request.MindMapTopic,
+                UserId = mindMap.UserId,
                 MindMapId = mindMap.Id,
                 ContentType = ContentType.StudyModule,
-                ClassId = classEntity.Id // Corrected from Class to ClassId
+                ClassId = classEntity.Id,
+                TopicId = request.MindMapTopicId
             };
 
-            // Create the StudyModule using the StudyModuleHelper
-            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(noteContent, mindMapTopic, studyTool, mindMapTopicId, mindMapId);
+            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(
+                noteContent,
+                request.MindMapTopic,
+                studyTool,
+                request.MindMapTopicId,
+                request.MindMapId
+            );
 
-            // Add the StudyModule to the database context and save changes
             _context.StudyModules.Add(studyModule);
             await _context.SaveChangesAsync();
 
             var dto = StudyModuleHelper.StudyModuleMapper.MapToDTO(studyModule);
 
-            // Return the DTO
-            return Ok(dto);
+            return Ok(new
+            {
+                StudyModuleId = dto.Id,
+                Name = dto.Name,
+                MindMapId = dto.MindMapId,
+                MindMapTopicId = dto.MindMapTopicId,
+                SubTopics = dto.SubTopics
+            });
         }
+
 
         [HttpGet("CheckExistingStudyModule/{topicId}")]
         public async Task<IActionResult> CheckExistingStudyModule(Guid topicId)
         {
+            var studyModuleExists = await _context.StudyTools.FirstOrDefaultAsync(sm =>
+                sm.TopicId == topicId && sm.ContentType == ContentType.StudyModule
+            );
+
+            var studyModuleBool = await _context.StudyTools.AnyAsync(sm =>
+                sm.TopicId == topicId && sm.ContentType == ContentType.StudyModule
+            );
+
+            return Ok(new { StudyModuleExists = studyModuleBool, StudyModuleId = studyModuleExists?.Id }); // Return as an object with a key
+        }
+
+        [HttpGet("StudyModule/{topicId}")]
+        public async Task<IActionResult> GetStudyModule(Guid topicId)
+        {
+            // Fetch the StudyModule entity from the database based on topicId
             var studyModule = await _context.StudyModules
+                .Include(sm => sm.SubTopics) // Include related SubTopics
                 .FirstOrDefaultAsync(sm => sm.MindMapTopicId == topicId);
 
-            if (studyModule != null)
+            if (studyModule == null)
             {
-                return Ok(new { exists = true });
+                return NotFound("Study Module not found.");
             }
-            else
-            {
-                return Ok(new { exists = false });
-            }
+
+            // Map the StudyModule entity to its DTO representation
+            var studyModuleDTO = StudyModuleHelper.StudyModuleMapper.MapToDTO(studyModule);
+
+            // Return the DTO as the response
+            return Ok(studyModuleDTO);
         }
+
     }
 }

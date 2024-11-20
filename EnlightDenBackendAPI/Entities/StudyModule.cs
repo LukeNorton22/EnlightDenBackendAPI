@@ -41,6 +41,13 @@ namespace EnlightDenBackendAPI.Entities
         public required string Title { get; set; }
         public required string Content { get; set; }
     }
+
+    public class GenerateStudyModuleRequestDto
+    {
+        public Guid MindMapId { get; set; }
+        public Guid MindMapTopicId { get; set; }
+        public string MindMapTopic { get; set; }
+    }
 }
 
 

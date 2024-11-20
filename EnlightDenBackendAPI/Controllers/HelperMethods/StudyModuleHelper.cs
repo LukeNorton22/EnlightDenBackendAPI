@@ -187,6 +187,7 @@ Below are the notes you should use:
                     Content = subTopic.Content
                 };
             }
+
         }
     }
 }
