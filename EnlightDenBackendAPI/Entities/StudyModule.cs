@@ -31,7 +31,7 @@ namespace EnlightDenBackendAPI.Entities
         public string Name { get; set; }
         public Guid MindMapId { get; set; }
         public Guid MindMapTopicId { get; set; }
-        public Guid MindMapTopic { get; set; }
+        public Guid StudyToolId { get; set; }
         public List<StudyModuleSubTopicDTO> SubTopics { get; set; } = new List<StudyModuleSubTopicDTO>();
     }
 

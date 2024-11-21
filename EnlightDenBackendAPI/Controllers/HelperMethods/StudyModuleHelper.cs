@@ -169,6 +169,7 @@ Below are the notes you should use:
                     Name = studyModule.MindMapTopicName,
                     MindMapId = studyModule.MindMapId,
                     MindMapTopicId = studyModule.MindMapTopicId,
+                    StudyToolId = studyModule.StudyToolId,
                     SubTopics = studyModule.SubTopics.Select(st => new StudyModuleSubTopicDTO
                     {
                         Id = st.Id,

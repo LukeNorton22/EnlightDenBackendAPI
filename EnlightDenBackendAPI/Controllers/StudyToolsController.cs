@@ -826,7 +826,7 @@ A: [Accurate answer from the notes]",
             _context.StudyModules.Add(studyModule);
             await _context.SaveChangesAsync();
 
-            studyTool.StudyModuleId = studyModule.Id;
+            //studyTool.StudyModuleId = studyModule.Id;
             _context.StudyTools.Update(studyTool);
             await _context.SaveChangesAsync();
 
@@ -834,11 +834,12 @@ A: [Accurate answer from the notes]",
 
             return Ok(new
             {
-                StudyModuleId = dto.Id,
-                Name = dto.Name,
-                MindMapId = dto.MindMapId,
-                MindMapTopicId = dto.MindMapTopicId,
-                SubTopics = dto.SubTopics
+                dto.Id,
+                dto.Name,
+                dto.MindMapId,
+                dto.MindMapTopicId,
+                dto.StudyToolId,
+                dto.SubTopics
             });
         }
 
@@ -846,15 +847,22 @@ A: [Accurate answer from the notes]",
         [HttpGet("CheckExistingStudyModule/{topicId}")]
         public async Task<IActionResult> CheckExistingStudyModule(Guid topicId)
         {
-            var studyModuleExists = await _context.StudyTools.FirstOrDefaultAsync(sm =>
-                sm.TopicId == topicId && sm.ContentType == ContentType.StudyModule
-            );
+            // Find the StudyTool entry that matches the topic and is of type StudyModule
+            var studyTool = await _context.StudyTools
+                .Include(st => st.StudyModule) // Include the related StudyModule
+                .FirstOrDefaultAsync(st =>
+                    st.TopicId == topicId && st.ContentType == ContentType.StudyModule);
 
-            var studyModuleBool = await _context.StudyTools.AnyAsync(sm =>
-                sm.TopicId == topicId && sm.ContentType == ContentType.StudyModule
-            );
+            // Check if the StudyTool exists
+            var studyModuleExists = studyTool != null;
+            var studyModuleId = studyTool?.StudyModule?.Id; // Get the associated StudyModuleId
 
-            return Ok(new { StudyModuleExists = studyModuleBool, StudyModuleId = studyModuleExists?.Id }); // Return as an object with a key
+            // Return the response
+            return Ok(new
+            {
+                StudyModuleExists = studyModuleExists,
+                StudyModuleId = studyModuleId // Return the StudyModuleId, not the StudyToolId
+            });
         }
 
         [HttpGet("GetStudyModule/{studyModuleId}")]
