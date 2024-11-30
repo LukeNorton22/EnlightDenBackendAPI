@@ -168,7 +168,7 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok(userStudySessions);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateStudySession(
             Guid id,
             [FromBody] UpdateStudySessionDto updateStudySessionDto
@@ -206,7 +206,7 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok(response);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteStudySession(Guid id)
         {
             var StudySession = await _context.StudySessions.FindAsync(id);
