@@ -1,6 +1,6 @@
 ﻿namespace EnlightDenBackendAPI.Entities;
 
-public class StudyPlan
+public class StudySession
 {
     public Guid Id { get; set; }
     public required string Name { get; set; }
@@ -11,9 +11,14 @@ public class StudyPlan
     public long EndTime { get; set; }
     public required string UserId { get; set; }
     public ApplicationUser? User { get; set; }
+
+   
+    public string ClassName {get; set;}
+
+    
 }
 
-public class CreateStudyPlanDto
+public class CreateStudySessionDto
 {
     public required string Name { get; set; }
     public string? Description { get; set; }
@@ -21,10 +26,11 @@ public class CreateStudyPlanDto
     public int Month { get; set; }
     public long StartTime { get; set; }
     public long EndTime { get; set; }
-    public required string UserId { get; set; }
+ 
+    public string  ClassName {get; set;}
 }
 
-public class GetStudyPlanDto
+public class GetStudySessionDto
 {
     public Guid Id { get; set; }
     public required string Name { get; set; }
@@ -35,10 +41,11 @@ public class GetStudyPlanDto
     public long StartTime { get; set; }
     public long EndTime { get; set; }
     public required string UserId { get; set; }
-    public User? User { get; set; }
+
+    public string ClassName {get; set;}
 }
 
-public class UpdateStudyPlanDto
+public class UpdateStudySessionDto
 {
     public required string Name { get; set; }
     public string? Description { get; set; }
@@ -46,4 +53,6 @@ public class UpdateStudyPlanDto
     public int Month { get; set; }
     public long StartTime { get; set; }
     public long EndTime { get; set; }
+
+    public string ClassName {get; set;}
 }
