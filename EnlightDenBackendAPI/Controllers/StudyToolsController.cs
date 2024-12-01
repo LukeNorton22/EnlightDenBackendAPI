@@ -812,7 +812,7 @@ A: [Accurate answer from the notes]",
                 MindMapId = mindMap.Id,
                 ContentType = ContentType.StudyModule,
                 ClassId = classEntity.Id,
-                TopicId = request.MindMapTopicId
+                TopicId = request.MindMapTopicId,
             };
 
             var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(

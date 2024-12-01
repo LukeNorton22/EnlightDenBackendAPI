@@ -15,8 +15,9 @@ public class StudyTool
     public Guid MindMapId { get; set; }
 
     public Guid TopicId { get; set; }
-    public StudyModule? StudyModule { get; set; } // navigational property for study module
     public ContentType ContentType { get; set; }
+    public StudyModule?  StudyModule { get; set; } // navigational property for study module
+    public Guid StudyModuleId { get; set; }
 }
 
 public enum ContentType

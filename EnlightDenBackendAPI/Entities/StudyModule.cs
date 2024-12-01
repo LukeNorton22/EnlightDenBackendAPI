@@ -47,6 +47,7 @@ namespace EnlightDenBackendAPI.Entities
         public Guid MindMapId { get; set; }
         public Guid MindMapTopicId { get; set; }
         public string MindMapTopic { get; set; }
+        
     }
 }
 
