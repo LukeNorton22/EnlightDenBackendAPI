@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EnlightDenBackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241109170117_UpdateStudyModuleAndPracticeTest")]
+    partial class UpdateStudyModuleAndPracticeTest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -204,6 +207,50 @@ namespace EnlightDenBackendAPI.Migrations
                     b.ToTable("Notes", "General");
                 });
 
+            modelBuilder.Entity("EnlightDenBackendAPI.Entities.PracticeQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PracticeTestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("QuestionType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PracticeTestId");
+
+                    b.ToTable("PracticeQuestion", "General");
+                });
+
+            modelBuilder.Entity("EnlightDenBackendAPI.Entities.PracticeTest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StudyModuleId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudyModuleId")
+                        .IsUnique();
+
+                    b.ToTable("PracticeTest", "General");
+                });
+
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.Question", b =>
                 {
                     b.Property<Guid>("Id")
@@ -242,22 +289,17 @@ namespace EnlightDenBackendAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MindMapId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("MindMapTopicId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("MindMapTopicName")
+                    b.Property<string>("MainTopic")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid>("MindMapId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("StudyToolId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MindMapTopicId");
 
                     b.HasIndex("StudyToolId")
                         .IsUnique();
@@ -321,7 +363,7 @@ namespace EnlightDenBackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StudyModuleId")
+                    b.Property<Guid?>("StudyModuleId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TopicId")
@@ -351,9 +393,6 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid>("MindMapTopicId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid>("StudyModuleId")
                         .HasColumnType("uuid");
@@ -583,6 +622,28 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("EnlightDenBackendAPI.Entities.PracticeQuestion", b =>
+                {
+                    b.HasOne("EnlightDenBackendAPI.Entities.PracticeTest", "PracticeTest")
+                        .WithMany("PracticeQuestions")
+                        .HasForeignKey("PracticeTestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PracticeTest");
+                });
+
+            modelBuilder.Entity("EnlightDenBackendAPI.Entities.PracticeTest", b =>
+                {
+                    b.HasOne("EnlightDenBackendAPI.Entities.StudyModule", "StudyModule")
+                        .WithOne("PracticeTest")
+                        .HasForeignKey("EnlightDenBackendAPI.Entities.PracticeTest", "StudyModuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StudyModule");
+                });
+
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.Question", b =>
                 {
                     b.HasOne("EnlightDenBackendAPI.Entities.Class", "Class")
@@ -604,19 +665,11 @@ namespace EnlightDenBackendAPI.Migrations
 
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyModule", b =>
                 {
-                    b.HasOne("EnlightDenBackendAPI.Entities.MindMapTopic", "MindMapTopic")
-                        .WithMany()
-                        .HasForeignKey("MindMapTopicId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("EnlightDenBackendAPI.Entities.StudyTool", "StudyTool")
                         .WithOne("StudyModule")
                         .HasForeignKey("EnlightDenBackendAPI.Entities.StudyModule", "StudyToolId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("MindMapTopic");
 
                     b.Navigation("StudyTool");
                 });
@@ -726,8 +779,16 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Navigation("Topics");
                 });
 
+            modelBuilder.Entity("EnlightDenBackendAPI.Entities.PracticeTest", b =>
+                {
+                    b.Navigation("PracticeQuestions");
+                });
+
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyModule", b =>
                 {
+                    b.Navigation("PracticeTest")
+                        .IsRequired();
+
                     b.Navigation("SubTopics");
                 });
 

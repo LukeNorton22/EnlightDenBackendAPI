@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using EnlightDenBackendAPI.Controllers.Helpers;
 using EnlightDenBackendAPI.Entities; // Assuming your entities are in this namespace
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
@@ -27,17 +28,20 @@ namespace EnlightDenBackendAPI.Controllers
         private readonly string _openAiApiKey;
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly StudyModuleHelper _studyModuleHelper;
 
         public StudyToolsController(
             IConfiguration configuration,
             ApplicationDbContext context,
-            UserManager<ApplicationUser> userManager
+            UserManager<ApplicationUser> userManager,
+            StudyModuleHelper studyModuleHelper
         )
         {
             _httpClient = new HttpClient();
             _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
             _context = context;
             _userManager = userManager;
+            _studyModuleHelper = studyModuleHelper;
         }
 
         [HttpPost("GenerateFlashcards")]
@@ -754,5 +758,132 @@ A: [Accurate answer from the notes]",
                 );
             }
         }
+
+        [HttpPost("GenerateStudyModuleFromTopic")]
+        public async Task<IActionResult> GenerateStudyModuleFromNote([FromBody] GenerateStudyModuleRequestDto request)
+        {
+            var userIdClaim = User
+                .Claims.FirstOrDefault(c =>
+                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                )
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized("User is not authorized. No valid user ID claim found.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            if (user == null)
+            {
+                return Unauthorized("User not found.");
+            }
+
+            var mindMap = await _context.MindMaps.FindAsync(request.MindMapId);
+            if (mindMap == null)
+            {
+                return NotFound("MindMap not found.");
+            }
+
+            var classEntity = await _context.Classes.FindAsync(mindMap.ClassId);
+            if (classEntity == null)
+            {
+                return BadRequest("The specified class does not exist.");
+            }
+
+            var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == mindMap.NoteId);
+            if (note == null)
+            {
+                return NotFound("Note not found.");
+            }
+
+            string noteContent = note.Content;
+
+            if (string.IsNullOrEmpty(request.MindMapTopic) || string.IsNullOrEmpty(noteContent))
+            {
+                return BadRequest("Name and note content are required.");
+            }
+
+            var studyTool = new StudyTool
+            {
+                Name = request.MindMapTopic,
+                UserId = mindMap.UserId,
+                MindMapId = mindMap.Id,
+                ContentType = ContentType.StudyModule,
+                ClassId = classEntity.Id,
+                TopicId = request.MindMapTopicId,
+            };
+
+            var studyModule = await _studyModuleHelper.CreateStudyModuleFromNoteAsync(
+                noteContent,
+                request.MindMapTopic,
+                studyTool,
+                request.MindMapTopicId,
+                request.MindMapId
+            );
+
+            _context.StudyModules.Add(studyModule);
+            await _context.SaveChangesAsync();
+
+            //studyTool.StudyModuleId = studyModule.Id;
+            _context.StudyTools.Update(studyTool);
+            await _context.SaveChangesAsync();
+
+            var dto = StudyModuleHelper.StudyModuleMapper.MapToDTO(studyModule);
+
+            return Ok(new
+            {
+                dto.Id,
+                dto.Name,
+                dto.MindMapId,
+                dto.MindMapTopicId,
+                dto.StudyToolId,
+                dto.SubTopics
+            });
+        }
+
+
+        [HttpGet("CheckExistingStudyModule/{topicId}")]
+        public async Task<IActionResult> CheckExistingStudyModule(Guid topicId)
+        {
+            // Find the StudyTool entry that matches the topic and is of type StudyModule
+            var studyTool = await _context.StudyTools
+                .Include(st => st.StudyModule) // Include the related StudyModule
+                .FirstOrDefaultAsync(st =>
+                    st.TopicId == topicId && st.ContentType == ContentType.StudyModule);
+
+            // Check if the StudyTool exists
+            var studyModuleExists = studyTool != null;
+            var studyModuleId = studyTool?.StudyModule?.Id; // Get the associated StudyModuleId
+
+            // Return the response
+            return Ok(new
+            {
+                StudyModuleExists = studyModuleExists,
+                StudyModuleId = studyModuleId // Return the StudyModuleId, not the StudyToolId
+            });
+        }
+
+        [HttpGet("GetStudyModule/{studyModuleId}")]
+        public async Task<IActionResult> GetStudyModule(Guid studyModuleId)
+        {
+            // Fetch the StudyModule entity from the database
+            var studyModule = await _context.StudyModules
+                .Include(sm => sm.SubTopics) // Include related SubTopics
+                .FirstOrDefaultAsync(sm => sm.Id == studyModuleId);
+
+            if (studyModule == null)
+            {
+                return NotFound("Study Module not found.");
+            }
+
+            // Map the StudyModule entity to a DTO
+            var studyModuleDTO = StudyModuleHelper.StudyModuleMapper.MapToDTO(studyModule);
+
+            // Return the DTO
+            return Ok(studyModuleDTO);
+        }
+
     }
 }
