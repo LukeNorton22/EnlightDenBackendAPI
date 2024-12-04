@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EnlightDenBackendAPI.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("api/Class")]
     public class ClassController : ControllerBase
