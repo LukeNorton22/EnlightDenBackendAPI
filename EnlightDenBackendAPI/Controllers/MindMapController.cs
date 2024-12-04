@@ -43,67 +43,74 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpPost("CreateMindMap")]
         public async Task<IActionResult> UploadPdfAndGenerateMindMap(IFormFile file, Guid classId)
         {
-            var userIdClaim = User
-                .Claims.FirstOrDefault(c =>
-                    c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
-                )
-                ?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim))
+            try
             {
-                return Unauthorized("User is authenticated but no valid user ID claim found.");
-            }
+                var userIdClaim = User
+                    .Claims.FirstOrDefault(c =>
+                        c.Type == ClaimTypes.NameIdentifier && Guid.TryParse(c.Value, out _)
+                    )
+                    ?.Value;
 
-            var user = await _userManager.FindByIdAsync(userIdClaim);
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized("User is authenticated but no valid user ID claim found.");
+                }
 
-            if (user == null)
-            {
-                return Unauthorized("User not found.");
-            }
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest("Please upload a valid PDF file.");
-            }
+                var user = await _userManager.FindByIdAsync(userIdClaim);
 
-            string extractedText;
+                if (user == null)
+                {
+                    return Unauthorized("User not found.");
+                }
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest("Please upload a valid PDF file.");
+                }
 
-            using (var stream = new MemoryStream())
-            {
-                await file.CopyToAsync(stream);
-                stream.Position = 0;
+                string extractedText;
 
-                extractedText = ExtractTextFromPdf(stream);
-            }
+                using (var stream = new MemoryStream())
+                {
+                    await file.CopyToAsync(stream);
+                    stream.Position = 0;
 
-            var mindMapTopics = await GenerateMindMapTopicsAsync(extractedText);
+                    extractedText = ExtractTextFromPdf(stream);
+                }
 
-            var mindMap = new MindMap
-            {
-                Id = Guid.NewGuid(),
-                Name = string.Empty,
-                ClassId = classId,
-                UserId = user.Id,
-                Topics = new List<MindMapTopic>(),
-            };
+                var mindMapTopics = await GenerateMindMapTopicsAsync(extractedText);
 
-            foreach (var topic in mindMapTopics)
-            {
-                var mindMapTopic = new MindMapTopic
+                var mindMap = new MindMap
                 {
                     Id = Guid.NewGuid(),
-                    Name = topic,
-                    MindMap = mindMap,
-                    MindMapId = mindMap.Id,
+                    Name = string.Empty,
+                    ClassId = classId,
+                    UserId = user.Id,
+                    Topics = new List<MindMapTopic>(),
                 };
 
-                mindMap.Topics.Add(mindMapTopic);
-                mindMap.TopicIds.Add(mindMapTopic.Id);
+                foreach (var topic in mindMapTopics)
+                {
+                    var mindMapTopic = new MindMapTopic
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = topic,
+                        MindMap = mindMap,
+                        MindMapId = mindMap.Id,
+                    };
+
+                    mindMap.Topics.Add(mindMapTopic);
+                    mindMap.TopicIds.Add(mindMapTopic.Id);
+                }
+
+                _context.MindMaps.Add(mindMap);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { MindMapId = mindMap.Id, MindMapTopics = mindMapTopics });
             }
-
-            _context.MindMaps.Add(mindMap);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { MindMapId = mindMap.Id, MindMapTopics = mindMapTopics });
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
         }
 
         [HttpPost("CreateMindMapFromNote/{noteId}")]
