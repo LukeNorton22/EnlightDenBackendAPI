@@ -8,7 +8,7 @@ EXPOSE 8080
 EXPOSE 8081
 
 # Copy .env file to the working directory
-COPY .env 
+COPY .env /EnlightDenBackendAPI/.env
 
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
