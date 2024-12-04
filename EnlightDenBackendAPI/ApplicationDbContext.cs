@@ -12,7 +12,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<User> Users { get; set; }
     public DbSet<Class> Classes { get; set; }
     public DbSet<Note> Notes { get; set; }
-    public DbSet<StudyPlan> StudyPlans { get; set; }
+    public DbSet<StudySession> StudySessions { get; set; }
     public DbSet<MindMap> MindMaps { get; set; }
     public DbSet<MindMapTopic> MindMapTopics { get; set; }
     public DbSet<Question> Questions { get; set; }
@@ -27,7 +27,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.ApplyConfiguration(new UserConfig());
         modelBuilder.ApplyConfiguration(new ClassConfig());
         modelBuilder.ApplyConfiguration(new NoteConfig());
-        modelBuilder.ApplyConfiguration(new StudyPlanConfig());
+        modelBuilder.ApplyConfiguration(new StudySessionConfig());
         modelBuilder.ApplyConfiguration(new MindMapConfig());
         modelBuilder.ApplyConfiguration(new MindMapTopicConfig());
         modelBuilder.ApplyConfiguration(new QuestionConfig());
