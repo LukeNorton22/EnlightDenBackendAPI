@@ -116,51 +116,58 @@ namespace EnlightDenBackendAPI.Controllers
         [HttpPost("CreateMindMapFromNote/{noteId}")]
         public async Task<IActionResult> CreateMindMapFromNote(Guid noteId)
         {
-            // Retrieve the note from the database
-            var note = await _context.Notes.FindAsync(noteId);
-
-            if (note == null)
+            try
             {
-                return NotFound("Note not found.");
-            }
+                // Retrieve the note from the database
+                var note = await _context.Notes.FindAsync(noteId);
 
-            string extractedText;
-            using (var stream = new FileStream(note.FilePath, FileMode.Open, FileAccess.Read))
-            {
-                extractedText = ExtractTextFromPdf(stream);
-            }
+                if (note == null)
+                {
+                    return NotFound("Note not found.");
+                }
 
-            // Generate mind map topics from the extracted text
-            var mindMapTopics = await GenerateMindMapTopicsAsync(note.Content);
+                string extractedText;
+                using (var stream = new FileStream(note.FilePath, FileMode.Open, FileAccess.Read))
+                {
+                    extractedText = ExtractTextFromPdf(stream);
+                }
 
-            var mindMap = new MindMap
-            {
-                Id = Guid.NewGuid(),
-                Name = note.Title, // You can customize this name
-                ClassId = note.ClassId,
-                UserId = note.UserId,
-                Topics = new List<MindMapTopic>(),
-                NoteId = noteId,
-            };
+                // Generate mind map topics from the extracted text
+                var mindMapTopics = await GenerateMindMapTopicsAsync(note.Content);
 
-            foreach (var topic in mindMapTopics)
-            {
-                var mindMapTopic = new MindMapTopic
+                var mindMap = new MindMap
                 {
                     Id = Guid.NewGuid(),
-                    Name = topic,
-                    MindMap = mindMap,
-                    MindMapId = mindMap.Id,
+                    Name = note.Title, // You can customize this name
+                    ClassId = note.ClassId,
+                    UserId = note.UserId,
+                    Topics = new List<MindMapTopic>(),
+                    NoteId = noteId,
                 };
 
-                mindMap.Topics.Add(mindMapTopic);
-                mindMap.TopicIds.Add(mindMapTopic.Id);
+                foreach (var topic in mindMapTopics)
+                {
+                    var mindMapTopic = new MindMapTopic
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = topic,
+                        MindMap = mindMap,
+                        MindMapId = mindMap.Id,
+                    };
+
+                    mindMap.Topics.Add(mindMapTopic);
+                    mindMap.TopicIds.Add(mindMapTopic.Id);
+                }
+
+                _context.MindMaps.Add(mindMap);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { MindMapId = mindMap.Id, MindMapTopics = mindMapTopics });
             }
-
-            _context.MindMaps.Add(mindMap);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { MindMapId = mindMap.Id, MindMapTopics = mindMapTopics });
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("GetAllMindMaps")]
