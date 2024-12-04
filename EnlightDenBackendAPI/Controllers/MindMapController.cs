@@ -124,12 +124,6 @@ namespace EnlightDenBackendAPI.Controllers
                 return NotFound("Note not found.");
             }
 
-            // Check if the file exists
-            if (!System.IO.File.Exists(note.FilePath))
-            {
-                return NotFound("File not found.");
-            }
-
             string extractedText;
             using (var stream = new FileStream(note.FilePath, FileMode.Open, FileAccess.Read))
             {
