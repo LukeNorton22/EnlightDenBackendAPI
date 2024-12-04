@@ -18,7 +18,7 @@ using Newtonsoft.Json.Linq;
 
 namespace EnlightDenBackendAPI.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("api/MindMap")]
     public class MindMapController : ControllerBase

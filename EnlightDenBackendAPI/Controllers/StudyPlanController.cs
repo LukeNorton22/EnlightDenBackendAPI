@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EnlightDenBackendAPI.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("api/StudyPlans")]
     public class StudyPlanController : ControllerBase

@@ -19,7 +19,7 @@ using Newtonsoft.Json.Linq;
 
 namespace EnlightDenBackendAPI.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("api/StudyTool")]
     public class StudyToolsController : ControllerBase
@@ -760,7 +760,9 @@ A: [Accurate answer from the notes]",
         }
 
         [HttpPost("GenerateStudyModuleFromTopic")]
-        public async Task<IActionResult> GenerateStudyModuleFromNote([FromBody] GenerateStudyModuleRequestDto request)
+        public async Task<IActionResult> GenerateStudyModuleFromNote(
+            [FromBody] GenerateStudyModuleRequestDto request
+        )
         {
             var userIdClaim = User
                 .Claims.FirstOrDefault(c =>
@@ -832,45 +834,50 @@ A: [Accurate answer from the notes]",
 
             var dto = StudyModuleHelper.StudyModuleMapper.MapToDTO(studyModule);
 
-            return Ok(new
-            {
-                dto.Id,
-                dto.Name,
-                dto.MindMapId,
-                dto.MindMapTopicId,
-                dto.StudyToolId,
-                dto.SubTopics
-            });
+            return Ok(
+                new
+                {
+                    dto.Id,
+                    dto.Name,
+                    dto.MindMapId,
+                    dto.MindMapTopicId,
+                    dto.StudyToolId,
+                    dto.SubTopics,
+                }
+            );
         }
-
 
         [HttpGet("CheckExistingStudyModule/{topicId}")]
         public async Task<IActionResult> CheckExistingStudyModule(Guid topicId)
         {
             // Find the StudyTool entry that matches the topic and is of type StudyModule
-            var studyTool = await _context.StudyTools
-                .Include(st => st.StudyModule) // Include the related StudyModule
+            var studyTool = await _context
+                .StudyTools.Include(st => st.StudyModule) // Include the related StudyModule
                 .FirstOrDefaultAsync(st =>
-                    st.TopicId == topicId && st.ContentType == ContentType.StudyModule);
+                    st.TopicId == topicId && st.ContentType == ContentType.StudyModule
+                );
 
             // Check if the StudyTool exists
             var studyModuleExists = studyTool != null;
             var studyModuleId = studyTool?.StudyModule?.Id; // Get the associated StudyModuleId
 
             // Return the response
-            return Ok(new
-            {
-                StudyModuleExists = studyModuleExists,
-                StudyModuleId = studyModuleId // Return the StudyModuleId, not the StudyToolId
-            });
+            return Ok(
+                new
+                {
+                    StudyModuleExists = studyModuleExists,
+                    StudyModuleId = studyModuleId // Return the StudyModuleId, not the StudyToolId
+                    ,
+                }
+            );
         }
 
         [HttpGet("GetStudyModule/{studyModuleId}")]
         public async Task<IActionResult> GetStudyModule(Guid studyModuleId)
         {
             // Fetch the StudyModule entity from the database
-            var studyModule = await _context.StudyModules
-                .Include(sm => sm.SubTopics) // Include related SubTopics
+            var studyModule = await _context
+                .StudyModules.Include(sm => sm.SubTopics) // Include related SubTopics
                 .FirstOrDefaultAsync(sm => sm.Id == studyModuleId);
 
             if (studyModule == null)
@@ -884,6 +891,5 @@ A: [Accurate answer from the notes]",
             // Return the DTO
             return Ok(studyModuleDTO);
         }
-
     }
 }
