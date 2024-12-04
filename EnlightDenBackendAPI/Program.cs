@@ -67,18 +67,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient(); // Add HttpClient for StudyModuleHelper
 
-// Add CORS configuration to allow requests from your frontend
+// Add CORS configuration to allow requests from any origin
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
-        "AllowFrontend",
+        "AllowAll",
         builder =>
         {
             builder
-                .WithOrigins("http://localhost:3000") // Adjust to your frontend's URL
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
+                .AllowAnyOrigin() // Allows requests from any origin
+                .AllowAnyHeader() // Allows any headers
+                .AllowAnyMethod(); // Allows any HTTP methods (GET, POST, etc.)
         }
     );
 });
