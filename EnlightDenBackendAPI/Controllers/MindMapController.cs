@@ -126,12 +126,6 @@ namespace EnlightDenBackendAPI.Controllers
                     return NotFound("Note not found.");
                 }
 
-                string extractedText;
-                using (var stream = new FileStream(note.FilePath, FileMode.Open, FileAccess.Read))
-                {
-                    extractedText = ExtractTextFromPdf(stream);
-                }
-
                 // Generate mind map topics from the extracted text
                 var mindMapTopics = await GenerateMindMapTopicsAsync(note.Content);
 
