@@ -337,14 +337,14 @@ Each question must relate directly to the topic.
 Here are the **strict instructions**:
 1. Only create questions that align **directly with the topic** '{topic}'.
 2. Ignore any content that does not fit the topic precisely.
-3. Ensure a mix of **short-answer** and **true/false** questions.
+3. Ensure the questions are ONLY true/false type, and the answer be either formated as TRUE if true or FALSE if false.
 4. Format the output like this:
 
    Q: [Your question here]  
    A: [The correct answer extracted from the notes]
 
 5. Do not include any text outside of the **Q: and A:** format.  
-6. Every answer must be concise, accurate, and directly drawn from the provided notes.
+6. Every question must be concise, accurate, and directly drawn from the provided notes.
 
 Below are the notes you should use:
 
@@ -477,7 +477,7 @@ Below are the notes you should use:
                             new
                             {
                                 role = "user",
-                                content = $"Create a test consisting of at least 10 short-answer and true/false questions based on the following text, label them Q: and A:: {text}",
+                                content = $"Create a test consisting of at least 10 true/false questions based on the following text, label them Q: and A:, make sure the answer is formated either as TRUE or FALSE: {text}",
                             },
                         },
                         max_tokens = 1500,
