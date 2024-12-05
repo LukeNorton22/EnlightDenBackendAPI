@@ -3,12 +3,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace EnlightDenBackendAPI.Entities.Configurations
 {
-    public class StudyPlanConfig : IEntityTypeConfiguration<StudyPlan>
+    public class StudySessionConfig : IEntityTypeConfiguration<StudySession>
     {
-        public void Configure(EntityTypeBuilder<StudyPlan> builder)
+        public void Configure(EntityTypeBuilder<StudySession> builder)
         {
             // Specify the table name and schema (if needed)
-            builder.ToTable("StudyPlans", "General"); // Adjust schema as necessary
+            builder.ToTable("StudySessions", "General"); // Adjust schema as necessary
 
             // Define the primary key
             builder.HasKey(sp => sp.Id);
@@ -25,6 +25,8 @@ namespace EnlightDenBackendAPI.Entities.Configurations
             builder.Property(sp => sp.StartTime).IsRequired();
 
             builder.Property(sp => sp.EndTime).IsRequired();
+
+            builder.Property(sp => sp.UserId).IsRequired();
 
             builder
                 .HasOne(sp => sp.User)

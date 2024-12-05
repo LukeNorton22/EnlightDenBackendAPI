@@ -11,7 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 // Load environment variables from .env file
-/*string envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+string envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
 
 // Check if the .env file exists
 if (File.Exists(envFilePath))
@@ -23,7 +23,7 @@ else
     throw new Exception(
         ".env file not found. Please create one with the required environment variables."
     );
-}*/
+}
 
 // Read API key and connection string from environment variables
 string openAiApiKey =
