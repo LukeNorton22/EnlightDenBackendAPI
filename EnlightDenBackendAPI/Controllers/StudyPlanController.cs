@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+﻿/*using System.Security.Claims;
 using EnlightDenBackendAPI.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -204,4 +204,9 @@ namespace EnlightDenBackendAPI.Controllers
             return Ok("Study plan deleted.");
         }
     }
+
+    public class CreateStudyPlanDto
+    {
+    }
 }
+*/
