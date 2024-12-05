@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EnlightDenBackendAPI.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("api/Class")]
     public class ClassController : ControllerBase
@@ -107,6 +107,12 @@ namespace EnlightDenBackendAPI.Controllers
             }
 
             var user = await _userManager.FindByIdAsync(userIdClaim);
+
+            // Check if user is null
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
 
             var classToCreate = new Class
             {

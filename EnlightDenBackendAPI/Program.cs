@@ -1,6 +1,7 @@
 using System.Text;
 using DotNetEnv;
 using EnlightDenBackendAPI;
+using EnlightDenBackendAPI.Controllers.Helpers;
 using EnlightDenBackendAPI.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -64,19 +65,19 @@ if (
 // Configure services and database connection
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpClient(); // Add HttpClient for StudyModuleHelper
 
-// Add CORS configuration to allow requests from your frontend
+// Add CORS configuration to allow requests from any origin
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
-        "AllowFrontend",
+        "AllowAll",
         builder =>
         {
             builder
-                .WithOrigins("http://localhost:3000") // Adjust to your frontend's URL
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
+                .AllowAnyOrigin() // Allows requests from any origin
+                .AllowAnyHeader() // Allows any headers
+                .AllowAnyMethod(); // Allows any HTTP methods (GET, POST, etc.)
         }
     );
 });
@@ -149,6 +150,19 @@ builder
 // Add authorization services if needed
 builder.Services.AddAuthorization();
 
+// Register StudyModuleHelper as a scoped service
+builder.Services.AddScoped<StudyModuleHelper>(provider =>
+{
+    var httpClient = provider.GetRequiredService<HttpClient>();
+    var context = provider.GetRequiredService<ApplicationDbContext>();
+    var openAiApiKey =
+        Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+        ?? throw new InvalidOperationException(
+            "OPENAI_API_KEY is not set in the environment variables."
+        );
+    return new StudyModuleHelper(httpClient, context, openAiApiKey);
+});
+
 var app = builder.Build();
 
 // Run migrations on startup
@@ -174,10 +188,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
+app.UseCors("AllowAll"); // Enable CORS for frontend
 app.UseAuthentication(); // Enable Authentication Middleware
 app.UseAuthorization(); // Enable Authorization Middleware
-app.UseCors("AllowFrontend"); // Enable CORS for frontend
 app.MapControllers(); // Map controller endpoints
 
 app.Run();

@@ -13,14 +13,18 @@ public class StudyTool
     public Guid ClassId { get; set; }
     public MindMap? MindMap { get; set; }
     public Guid MindMapId { get; set; }
+
     public Guid TopicId { get; set; }
     public ContentType ContentType { get; set; }
+    public StudyModule?  StudyModule { get; set; } // navigational property for study module
+    public Guid StudyModuleId { get; set; }
 }
 
 public enum ContentType
 {
     Test = 1,
     FlashCardSet = 2,
+    StudyModule = 3,
 }
 
 public class GetStudyToolsDTO

@@ -16,7 +16,7 @@ using static ApplicationDbContext;
 
 namespace EnlightDenBackendAPI.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("api/Notes")]
     public class NotesController : ControllerBase

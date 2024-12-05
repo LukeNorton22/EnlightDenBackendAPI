@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EnlightDenBackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241115042224_StudyModuleChanges")]
+    partial class StudyModuleChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -242,9 +245,6 @@ namespace EnlightDenBackendAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MindMapId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("MindMapTopicId")
                         .HasColumnType("uuid");
 
@@ -265,15 +265,11 @@ namespace EnlightDenBackendAPI.Migrations
                     b.ToTable("StudyModule", "General");
                 });
 
-            modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudySession", b =>
+            modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyPlan", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ClassName")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<int>("Day")
                         .HasColumnType("integer");
@@ -303,7 +299,7 @@ namespace EnlightDenBackendAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("StudySessions", "General");
+                    b.ToTable("StudyPlans", "General");
                 });
 
             modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyTool", b =>
@@ -325,7 +321,7 @@ namespace EnlightDenBackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StudyModuleId")
+                    b.Property<Guid?>("StudyModuleId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TopicId")
@@ -625,7 +621,7 @@ namespace EnlightDenBackendAPI.Migrations
                     b.Navigation("StudyTool");
                 });
 
-            modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudySession", b =>
+            modelBuilder.Entity("EnlightDenBackendAPI.Entities.StudyPlan", b =>
                 {
                     b.HasOne("EnlightDenBackendAPI.Entities.ApplicationUser", "User")
                         .WithMany()
